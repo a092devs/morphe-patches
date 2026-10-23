@@ -123,7 +123,7 @@ public final class NavigationBarPatch {
      * Injection point.
      */
     public static String swapCreateWithNotificationButton(String osName) {
-        return SpoofOSNamePatch.getOSName(SWAP_CREATE_WITH_NOTIFICATIONS_BUTTON);
+        return osName;
     }
 
     /**
