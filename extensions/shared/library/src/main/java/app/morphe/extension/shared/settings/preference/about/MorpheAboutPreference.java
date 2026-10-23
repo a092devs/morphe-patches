@@ -129,7 +129,7 @@ public class MorpheAboutPreference extends Preference {
         // Header section.
         html.append("<div class=\"dialog-header\">");
 
-        html.append("<div class=\"app-name\">NexAlloy</div>");
+        html.append("<div class=\"app-name\">NexAlloyNext</div>");
 
         html.append(String.format("""
                     <div class="info-card">
@@ -147,10 +147,9 @@ public class MorpheAboutPreference extends Preference {
                 .append("<div class=\"settings-group\">");
 
         var myLinks = new WebLink[]{
-                new WebLink("GitHub", null, "https://github.com/NexAlloy/NexAlloy"),
-                new WebLink("Discord", null, "https://discord.gg/QWUrAA2mKq"),
-                new WebLink("Telegram", null, "https://t.me/ReVancedXposed"),
-                new WebLink("Donate", null, "https://afdian.com/a/ChsBuffer"),
+                new WebLink("GitHub", "NexAlloyNext", "https://github.com/a092devs/NexAlloyNext"),
+                new WebLink("Developer", "@a092devs", "https://github.com/a092devs"),
+                new WebLink("Telegram", "@a092devs", "https://t.me/a092devs"),
         };
 
         // Link buttons with per-URL SVG icons.
@@ -161,7 +160,13 @@ public class MorpheAboutPreference extends Preference {
                     .append("</span>")
                     .append("<div class=\"item-text\"><div class=\"item-title\">")
                     .append(link.name)
-                    .append("</div></div>")
+                    .append("</div>");
+            if (link.subText != null) {
+                html.append("<div class=\"item-subtitle\">")
+                        .append(link.subText)
+                        .append("</div>");
+            }
+            html.append("</div>")
                     .append(AboutDialogStyle.chevron())
                     .append("</a>");
         }

@@ -868,7 +868,20 @@ public class Settings extends SharedYouTubeSettings {
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_NAVIGATION_BAR_LIGHT = new BooleanSetting("morphe_disable_translucent_navigation_bar_light", FALSE);
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_NAVIGATION_BAR_DARK = new BooleanSetting("morphe_disable_translucent_navigation_bar_dark", FALSE);
 
+    private static final BooleanSetting NEXALLOY_DEFAULTS_MIGRATED = new BooleanSetting("nexalloy_defaults_migrated_v4", FALSE, false, false);
+
     static {
+        if (!NEXALLOY_DEFAULTS_MIGRATED.get()) {
+            SWAP_CREATE_WITH_NOTIFICATIONS_BUTTON.save(false);
+            HIDE_HORIZONTAL_SHELVES.save(false);
+            HIDE_GET_PREMIUM_BUTTON.save(true);
+            HIDE_YOUTUBE_PREMIUM_MENU.save(true);
+            HIDE_SHORTS_BUTTON.save(false);
+            HIDE_SUBSCRIPTIONS_BUTTON.save(false);
+            HIDE_CREATE_BUTTON.save(false);
+            NEXALLOY_DEFAULTS_MIGRATED.save(true);
+        }
+
         migrateOldSettingToNew(DEPRECATED_BYPASS_URL_REDIRECTS, BYPASS_LINK_REDIRECTS);
         migrateOldSettingToNew(DEPRECATED_COPY_VIDEO_URL, DEPRECATED_COPY_VIDEO_URL_BUTTON);
         migrateOldSettingToNew(DEPRECATED_COPY_VIDEO_URL_TIMESTAMP, DEPRECATED_COPY_VIDEO_URL_BUTTON_TIMESTAMP);
