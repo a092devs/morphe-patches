@@ -1183,6 +1183,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
      */
     @SuppressWarnings("deprecation")
     protected static void sortPreferenceGroups(PreferenceGroup group) {
+        if (group == null) return;
         Sort groupSort = Sort.fromKey(group.getKey(), Sort.UNSORTED);
         List<Pair<String, Preference>> preferences = new ArrayList<>();
 
@@ -1191,6 +1192,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
 
         for (int i = 0, prefCount = group.getPreferenceCount(); i < prefCount; i++) {
             Preference preference = group.getPreference(i);
+            if (preference == null) continue;
 
             final Sort preferenceSort;
             if (preference instanceof PreferenceGroup subGroup) {
@@ -1205,19 +1207,39 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             final String sortValue;
             switch (preferenceSort) {
                 case BY_TITLE:
-                    sortValue = Utils.removePunctuationToLowercase(preference.getTitle());
+                    CharSequence title = preference.getTitle();
+                    if (title == null && preference instanceof PreferenceGroup pg) {
+                        for (int j = 0, n = pg.getPreferenceCount(); j < n; j++) {
+                            Preference child = pg.getPreference(j);
+                            if (child != null && child.getTitle() != null && child.getTitle().length() > 0) {
+                                title = child.getTitle();
+                                break;
+                            }
+                        }
+                    }
+                    sortValue = Utils.removePunctuationToLowercase(title);
                     break;
                 case BY_KEY:
                     String key = preference.getKey();
                     if (key == null) {
-                        if (preference instanceof NoTitlePreferenceCategory noTitlePref) {
-                            // Use first preference and not the category.
-                            key = noTitlePref.getPreference(0).getKey();
-                        } else {
-                            throw new IllegalStateException(
-                                    "Group is sort by key but preference has null key: " + preference
-                            );
+                        if (preference instanceof PreferenceGroup pg) {
+                            for (int j = 0, n = pg.getPreferenceCount(); j < n; j++) {
+                                Preference child = pg.getPreference(j);
+                                if (child != null && child.getKey() != null) {
+                                    key = child.getKey();
+                                    break;
+                                }
+                            }
+                            if (key == null) {
+                                CharSequence groupTitle = pg.getTitle();
+                                if (groupTitle != null) {
+                                    key = Utils.removePunctuationToLowercase(groupTitle);
+                                }
+                            }
                         }
+                    }
+                    if (key == null) {
+                        continue; // Keep original sorting for keyless items in a key-sorted group.
                     }
                     sortValue = key;
                     break;
@@ -1230,9 +1252,13 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             preferences.add(new Pair<>(sortValue, preference));
         }
 
-        // Sort the list using locale-specific collation rules.
-        preferences.sort((pair1, pair2)
-                -> collator.compare(pair1.first, pair2.first));
+        // Sort the list using locale-specific collation rules with null safety.
+        preferences.sort((pair1, pair2) -> {
+            if (pair1.first == null && pair2.first == null) return 0;
+            if (pair1.first == null) return 1;
+            if (pair2.first == null) return -1;
+            return collator.compare(pair1.first, pair2.first);
+        });
 
         // Reassign order values to reflect the new sorted sequence
         int index = 0;
