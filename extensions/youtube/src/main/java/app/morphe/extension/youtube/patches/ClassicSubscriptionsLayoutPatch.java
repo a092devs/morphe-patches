@@ -85,7 +85,7 @@ public final class ClassicSubscriptionsLayoutPatch {
             boolean isFeed = false;
             for (int i = tabs.size() - 1; i >= 0; i--) {
                 TabRenderer tabRenderer = BrowseTab.parseFrom(
-                        ((MessageLite) tabs.get(i)).toByteArray()
+                        (byte[]) tabs.get(i).getClass().getMethod("toByteArray").invoke(tabs.get(i))
                 ).getTabRenderer();
 
                 isFeed |= isFeedTab(tabRenderer);
