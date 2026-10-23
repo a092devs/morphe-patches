@@ -94,7 +94,7 @@ final class AboutDialogStyle {
 
         String lower = url.toLowerCase(Locale.US);
         if (lower.contains("github.com")) return materialIcon(PATH_CODE);
-        if (lower.contains("reddit.com")) return materialIcon(PATH_FORUM);
+        if (lower.contains("t.me") || lower.contains("telegram") || lower.contains("reddit.com")) return materialIcon(PATH_FORUM);
         if (lower.contains("crowdin") || lower.contains("translate")) return materialIcon(PATH_TRANSLATE);
         if (lower.contains("donat")) return materialIcon(PATH_FAVORITE);
         if (lower.startsWith("https://license")) return materialIcon(PATH_DESCRIPTION);
