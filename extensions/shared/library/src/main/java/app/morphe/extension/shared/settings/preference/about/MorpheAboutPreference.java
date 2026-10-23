@@ -19,6 +19,9 @@ import android.util.AttributeSet;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import io.github.nexalloy.BuildConfig;
 
 /**
@@ -33,6 +36,14 @@ public class MorpheAboutPreference extends Preference {
         @Nullable
         final String subText;
         final String url;
+
+        WebLink(JSONObject json) throws JSONException {
+            this(json.optBoolean("preferred", false),
+                    json.getString("name"),
+                    null,
+                    json.getString("url")
+            );
+        }
 
         WebLink(String name, @Nullable String subText, String url) {
             this(false, name, subText, url);
