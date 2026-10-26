@@ -884,14 +884,6 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         }
 
         /**
-         * @return The list of logs matching the current search filter (used for zero-copy file streaming).
-         */
-        @NonNull
-        List<String> getFilteredLogs() {
-            return filteredLogs;
-        }
-
-        /**
          * @return Only the logs matching the current search filter, capped at
          *         {@link Logger#CLIPBOARD_MAX_LENGTH} to respect Android's Binder transaction limit.
          */
@@ -1037,7 +1029,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
 
             Button buttonExport = CustomDialog.createButton(context, dialogPair.first,
                     str("morphe_settings_export_file"),
-                    () -> exportToFile(logAdapter.getFilteredLogs()),
+                    () -> exportToFile(logAdapter.filteredLogs),
                     false, true);
 
             LinearLayout.LayoutParams buttonExportParams = new LinearLayout.LayoutParams(

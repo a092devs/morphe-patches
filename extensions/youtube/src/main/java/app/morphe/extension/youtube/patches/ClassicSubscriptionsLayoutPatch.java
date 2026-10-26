@@ -26,6 +26,7 @@ import app.morphe.extension.youtube.innertube.GuideResponseOuterClass.PivotBarIt
 import app.morphe.extension.youtube.innertube.GuideResponseOuterClass.TextRun;
 import app.morphe.extension.youtube.innertube.IconOuterClass.YTIconType;
 import app.morphe.extension.youtube.settings.Settings;
+import io.github.nexalloy.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
 
 /**
  * Disables the A/B layout that moves Subscriptions from the navigation bar to a tab of the Home feed,
@@ -58,6 +59,9 @@ public final class ClassicSubscriptionsLayoutPatch {
     private static final boolean DISABLE_ICON_ONLY_NAVIGATION_BUTTONS =
             Settings.DISABLE_ICON_ONLY_NAVIGATION_BUTTONS.get();
 
+    private static final boolean DISABLE_TOOLBAR_NAVIGATION_TABS =
+            Settings.DISABLE_TOOLBAR_NAVIGATION_TABS.get();
+
     /**
      * Icon of the Subscriptions navigation button, with the same style of the Home button.
      */
@@ -78,7 +82,7 @@ public final class ClassicSubscriptionsLayoutPatch {
      * @return Only the selected tab, if the tabs are the Home and Subscriptions feeds.
      */
     public static List<Object> filterBrowseTabs(List<Object> tabs) {
-        if (tabs == null || tabs.size() <= 1) return tabs;
+        if (!DISABLE_TOOLBAR_NAVIGATION_TABS || tabs == null || tabs.size() <= 1) return tabs;
 
         try {
             int selectedIndex = 0;
@@ -115,11 +119,11 @@ public final class ClassicSubscriptionsLayoutPatch {
      * @return The item converted to a button with a label, or null if the item is not icon only.
      */
     @Nullable
-    public static byte[] convertIconOnlyPivotBarItem(MessageLite pivotBarItem) {
+    public static byte[] convertIconOnlyPivotBarItem(Object pivotBarItem) {
         if (!DISABLE_ICON_ONLY_NAVIGATION_BUTTONS) return null;
 
         try {
-            PivotBarItemBytes item = PivotBarItemBytes.parseFrom(pivotBarItem.toByteArray());
+            PivotBarItemBytes item = NavigationBarPatchKt.getPivotBarItemProto(pivotBarItem);
             if (!item.hasPivotBarIconOnlyItemRenderer()) return null;
 
             PivotBarIconOnlyItemRendererBytes iconOnly =
@@ -153,16 +157,7 @@ public final class ClassicSubscriptionsLayoutPatch {
     @Nullable
     private static PivotBarItemRenderer getPivotBarItemRenderer(Object pivotBarItem) {
         try {
-            if (!(pivotBarItem instanceof PivotBarItemInterface renderInterface)) {
-                if (Settings.DEBUG.get()) {
-                    Logger.printException(() -> "Debug: Unknown pivot bar class: " + pivotBarItem.getClass());
-                }
-            } else {
-                MessageLite messageLite = renderInterface.patch_getPivotBarItemRenderer();
-                if (messageLite != null) {
-                    return PivotBarItemRenderer.parseFrom(messageLite.toByteArray());
-                }
-            }
+            return NavigationBarPatchKt.getPivotBarItemRenderer(pivotBarItem);
         } catch (Exception ex) {
             Logger.printException(() -> "Failed to parse PivotBarItemRenderer", ex);
         }
@@ -182,7 +177,7 @@ public final class ClassicSubscriptionsLayoutPatch {
      * @return If the Subscriptions button is missing.
      */
     public static boolean needsSubscriptionsPivotBarItem(List<Object> list) {
-        if (list == null || list.isEmpty()) return false;
+        if (!DISABLE_TOOLBAR_NAVIGATION_TABS || list == null || list.isEmpty()) return false;
 
         PivotBarItemRenderer homeRenderer = null;
         for (Object item : list) {
@@ -250,6 +245,6 @@ public final class ClassicSubscriptionsLayoutPatch {
      * Navigation bar used before the guide response is loaded.
      */
     public static boolean hideOfflineSubscriptionsButton(boolean original) {
-        return false;
+        return !DISABLE_TOOLBAR_NAVIGATION_TABS && original;
     }
 }
