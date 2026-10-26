@@ -38,6 +38,6 @@ public class ToolBarPatch {
     }
 
     private static void hookToolBar(String enumString, View parentView, ImageView imageView) {
-        // Code added during patching.
+        ChannelSearchPatch.setSearchButtonView(enumString, parentView, imageView);
     }
 }
