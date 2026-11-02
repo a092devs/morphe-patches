@@ -10,7 +10,7 @@
 
 package app.morphe.extension.youtube.patches;
 
-import static io.github.nexalloy.morphe.youtube.video.information.VideoInformationPatchKt.onUserSelectedPlaybackSpeed;
+import static io.github.nexfusion.morphe.youtube.video.information.VideoInformationPatchKt.onUserSelectedPlaybackSpeed;
 
 import android.icu.text.NumberFormat;
 

@@ -76,7 +76,7 @@ import app.morphe.extension.youtube.innertube.IconOuterClass.YTIconType;
 import app.morphe.extension.youtube.patches.spoof.SpoofOSNamePatch;
 import app.morphe.extension.youtube.settings.Settings;
 import app.morphe.extension.youtube.shared.NavigationBar;
-import io.github.nexalloy.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
+import io.github.nexfusion.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
 
 @SuppressWarnings("unused")
 public final class NavigationBarPatch {

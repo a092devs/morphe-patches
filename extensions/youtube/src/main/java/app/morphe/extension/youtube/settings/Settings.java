@@ -946,10 +946,10 @@ public class Settings extends SharedYouTubeSettings {
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_NAVIGATION_BAR_DARK = new BooleanSetting("morphe_disable_translucent_navigation_bar_dark", FALSE);
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_NAVIGATION = new BooleanSetting("morphe_disable_translucent_navigation", FALSE);
 
-    private static final BooleanSetting NEXALLOY_DEFAULTS_MIGRATED = new BooleanSetting("nexalloy_defaults_migrated_v4", FALSE, false, false);
+    private static final BooleanSetting NEXFUSION_DEFAULTS_MIGRATED = new BooleanSetting("nexfusion_defaults_migrated_v4", FALSE, false, false);
 
     static {
-        if (!NEXALLOY_DEFAULTS_MIGRATED.get()) {
+        if (!NEXFUSION_DEFAULTS_MIGRATED.get()) {
             SWAP_CREATE_WITH_NOTIFICATIONS_BUTTON.save(false);
             HIDE_HORIZONTAL_SHELVES.save(false);
             HIDE_GET_PREMIUM_BUTTON.save(true);
@@ -957,7 +957,7 @@ public class Settings extends SharedYouTubeSettings {
             HIDE_SHORTS_BUTTON.save(false);
             HIDE_SUBSCRIPTIONS_BUTTON.save(false);
             HIDE_CREATE_BUTTON.save(false);
-            NEXALLOY_DEFAULTS_MIGRATED.save(true);
+            NEXFUSION_DEFAULTS_MIGRATED.save(true);
         }
 
         if (!DEPRECATED_RESTORE_OLD_VIDEO_ACTION_BAR.isSetToDefault()) {

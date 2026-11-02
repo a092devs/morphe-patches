@@ -26,7 +26,7 @@ import app.morphe.extension.youtube.innertube.GuideResponseOuterClass.PivotBarIt
 import app.morphe.extension.youtube.innertube.GuideResponseOuterClass.TextRun;
 import app.morphe.extension.youtube.innertube.IconOuterClass.YTIconType;
 import app.morphe.extension.youtube.settings.Settings;
-import io.github.nexalloy.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
+import io.github.nexfusion.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
 
 /**
  * Disables the A/B layout that moves Subscriptions from the navigation bar to a tab of the Home feed,

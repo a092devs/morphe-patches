@@ -22,10 +22,10 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import io.github.nexalloy.BuildConfig;
+import io.github.nexfusion.BuildConfig;
 
 /**
- * Opens a dialog showing official links for NexAlloyNext.
+ * Opens a dialog showing official links for NexFusion.
  */
 @SuppressWarnings({"unused", "deprecation"})
 public class MorpheAboutPreference extends Preference {
@@ -71,9 +71,9 @@ public class MorpheAboutPreference extends Preference {
     }
 
     // Dummy url
-    static final String CREDITS_LINK_PLACEHOLDER_URL = "https://github.com/a092devs/NexAlloyNext";
+    static final String CREDITS_LINK_PLACEHOLDER_URL = "https://github.com/a092devs/NexFusion";
 
-    static final WebLink CREDITS_LINK = new WebLink("GitHub", "NexAlloyNext", CREDITS_LINK_PLACEHOLDER_URL);
+    static final WebLink CREDITS_LINK = new WebLink("GitHub", "NexFusion", CREDITS_LINK_PLACEHOLDER_URL);
 
     private static String useNonBreakingHyphens(String text) {
         return text.replace("-", "&#8209;");
@@ -88,7 +88,7 @@ public class MorpheAboutPreference extends Preference {
 
         // Header section.
         html.append("<div class=\"dialog-header\">");
-        html.append("<div class=\"app-name\">NexAlloyNext</div>");
+        html.append("<div class=\"app-name\">NexFusion</div>");
         html.append(String.format("""
                     <div class="info-card">
                         <p>Version <i>%s</i></p>
@@ -104,7 +104,7 @@ public class MorpheAboutPreference extends Preference {
                 .append("<div class=\"settings-group\">");
 
         var myLinks = new WebLink[]{
-                new WebLink("GitHub", "NexAlloyNext", "https://github.com/a092devs/NexAlloyNext"),
+                new WebLink("GitHub", "NexFusion", "https://github.com/a092devs/NexFusion"),
                 new WebLink("Developer", "@a092devs", "https://github.com/a092devs"),
                 new WebLink("Telegram", "@a092devs", "https://t.me/a092devs"),
         };

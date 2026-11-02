@@ -12,7 +12,7 @@ package app.morphe.extension.shared.settings.preference;
 
 import static app.morphe.extension.shared.StringRef.str;
 
-import static io.github.nexalloy.morphe.shared.settings.PreferencesKt.getPreferences;
+import static io.github.nexfusion.morphe.shared.settings.PreferencesKt.getPreferences;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -93,7 +93,7 @@ import app.morphe.extension.shared.theme.ThemeUtils;
 import app.morphe.extension.shared.ui.CustomDialog;
 import app.morphe.extension.shared.ui.Dim;
 
-import io.github.nexalloy.morphe.shared.misc.settings.preference.BasePreference;
+import io.github.nexfusion.morphe.shared.misc.settings.preference.BasePreference;
 
 @SuppressWarnings("deprecation")
 public abstract class AbstractPreferenceFragment extends PreferenceFragment {
