@@ -28,6 +28,7 @@ import app.morphe.patches.shared.misc.settings.preference.SwitchPreference
 import app.morphe.patches.youtube.misc.extension.sharedExtensionPatch
 import app.morphe.patches.youtube.misc.playservice.is_21_02_or_greater
 import app.morphe.patches.youtube.misc.playservice.is_21_03_or_greater
+import app.morphe.patches.youtube.misc.playservice.is_21_12_or_greater
 import app.morphe.patches.youtube.misc.playservice.is_21_43_or_greater
 import app.morphe.patches.youtube.misc.playservice.versionCheckPatch
 import app.morphe.patches.youtube.misc.settings.PreferenceScreen
@@ -36,6 +37,7 @@ import app.morphe.patches.youtube.shared.Constants.COMPATIBILITY_YOUTUBE
 import app.morphe.util.findFieldFromToString
 import app.morphe.util.findInstructionIndicesReversedOrThrow
 import app.morphe.util.indexOfFirstInstructionOrThrow
+import app.morphe.util.insertLiteralOverride
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
@@ -140,12 +142,20 @@ val ambientModePatch = bytecodePatch(
                     PowerSaveModeSyntheticFingerprint.matchOrNull(
                                         mutableClassDefBy(reference.definingClass)
                                     )?.method?.hook()
+
+                    // 21.43+ inlines the lambda into the receiver.
+                    if (is_21_43_or_greater) hook()
                 }
             }
         }
 
         if (is_21_43_or_greater) {
             IntentActionSyntheticAlternativeFingerprint.method.hook()
+
+            // 21.43+ inlines the lambdas that read the first value for the Ambient mode receiver.
+            // The receiver is registered on the main thread, or asynchronously if a server flag is on.
+            powerSaveModeInitialValueFingerprint(PowerSaveModeReceiverRegisterFingerprint.method).method.hook()
+            PowerSaveModeInitialValueAsyncFingerprint.method.hook()
         } else if (is_21_03_or_greater) {
             IntentActionSyntheticAlternativeLegacyFingerprint.method.hook()
         }
@@ -171,6 +181,13 @@ val ambientModePatch = bytecodePatch(
             )
         }
 
+        // Black background experiment: ambient mode is always inactive, whatever the
+        // CinematicContainerRenderer, power save mode or flyout menu toggle say.
+        // Turn it off, so the watch page uses the same ambient mode and layout as outside the experiment.
+        if (is_21_12_or_greater) AmbientModeBlackBackgroundFeatureFlagFingerprint.matchAllMethodIndicesForEach { index ->
+            insertLiteralOverride(index, false)
+        }
+
         // The /next response can have no CinematicContainerRenderer, a static color style
         // (the background does not change with the video, issue #3783)
         // or ambient mode off by default. Override what the server decides.
@@ -178,15 +195,15 @@ val ambientModePatch = bytecodePatch(
         val rendererType = rendererClass.type
 
         val styleMatches = cinematicContainerPresentationStyleFingerprint(rendererType).instructionMatches
-        val hasBitsField = styleMatches[0].getFieldAccessed()
+        val hasBitsField = styleMatches[0].fieldReference
         val styleHasBitMask = styleMatches[1].getInstruction<NarrowLiteralInstruction>().narrowLiteral
-        val styleField = styleMatches[3].getFieldAccessed()
+        val styleField = styleMatches[3].fieldReference
 
         val configField = cinematicContainerConfigFingerprint(rendererType).matchSingle()
-            .instructionMatches.last().getFieldAccessed()
+            .instructionMatches.last().fieldReference
         val configType = configField.type
         val enabledByDefaultField = cinematicContainerEnabledByDefaultFingerprint(configType).matchSingle()
-            .instructionMatches[3].getFieldAccessed()
+            .instructionMatches[3].fieldReference
 
         val defaultRendererField = rendererClass.fields.first { field ->
             field.type == rendererType && AccessFlags.STATIC.isSet(field.accessFlags)
@@ -195,8 +212,8 @@ val ambientModePatch = bytecodePatch(
         val stateType = CinematicContainerRendererWithStateFingerprint.method
             .findFieldFromToString("rendererLoadedState=").type
         val stateMatch = cinematicContainerRendererLoadedStateFingerprint(stateType).matchSingle()
-        val waitingStateField = stateMatch.instructionMatches[1].getFieldAccessed()
-        val loadedStateField = stateMatch.instructionMatches[3].getFieldAccessed()
+        val waitingStateField = stateMatch.instructionMatches[1].fieldReference
+        val loadedStateField = stateMatch.instructionMatches[3].fieldReference
 
         CinematicContainerRendererWithStateFingerprint.classDef.apply {
             val constructor = methods.first { method ->

@@ -69,6 +69,9 @@ import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ButtonVie
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.CapabilitiesSubscriptionConfig;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ChannelAvatar;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ClientResource;
+import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.CollectionPrimaryThumbnail;
+import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.CollectionStackColors;
+import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.CollectionThumbnailViewModel;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.CommandContext;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ComponentType;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ContentImage;
@@ -117,6 +120,7 @@ import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.Thumbnail
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailBottomOverlayViewModel;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailElementOverlay;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailOverlay;
+import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailOverlayBadgeViewModel;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailOverlayProgressBar;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailOverlayProgressBarViewModel;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.ThumbnailViewModel;
@@ -127,7 +131,9 @@ import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.VideoData
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.VideoThumbnail;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.VideoWithContextData;
 import app.morphe.extension.youtube.innertube.FeedCardLayoutOuterClass.VideoWithContextModel;
+import app.morphe.extension.youtube.patches.components.LayoutComponentsFilter;
 import app.morphe.extension.youtube.patches.theme.SeekbarColorPatch;
+import app.morphe.extension.youtube.patches.utils.FeedVideoCardsPatch;
 import app.morphe.extension.youtube.patches.utils.FlyoutUtils;
 import app.morphe.extension.youtube.patches.utils.ProtoNode;
 import app.morphe.extension.youtube.settings.Settings;
@@ -177,6 +183,16 @@ public class FeedCardLayoutPatch {
      * Browse id of the playlist pages, followed by the playlist id.
      */
     private static final String PLAYLIST_BROWSE_ID_PREFIX = "VL";
+    private static final String MIX_PLAYLIST_ID_PREFIX = "RD";
+    /**
+     * Values of the playlists and the mixes of the classic layout.
+     */
+    private static final int PLAYLIST_BADGE_ICON_TYPE = 4;
+    private static final int MIX_BADGE_ICON_TYPE = 8;
+    private static final int COLLECTION_BADGE_COLOR = 0xCC595959;
+    private static final int COLLECTION_BADGE_DARK_COLOR = 0xCC232323;
+    private static final int COLLECTION_STACK_FRONT_COLOR = 0xCC999999;
+    private static final int COLLECTION_STACK_BACK_COLOR = 0xCC8C8C8C;
 
     /**
      * Templates of the feed videos, with the field of their model and the known fields of the model
@@ -310,18 +326,25 @@ public class FeedCardLayoutPatch {
      */
     private static final Pattern METADATA_SEPARATOR_PATTERN = Pattern.compile(" {2,}| · ");
 
-    private static final ByteTrieSearch elementSearch = new ByteTrieSearch(
-            CARD_LAYOUT
-                    ? ByteTrieSearch.convertStringsToBytes(CLASSIC_TEMPLATE, SHELF_HEADER_TEMPLATE,
-                    HORIZONTAL_SHELF_TEMPLATE, SHORTS_VIDEO_CELL_TEMPLATE, SHORTS_SHELF_TEMPLATE,
-                    GRID_VIDEO_TEMPLATE)
-                    : ByteTrieSearch.convertStringsToBytes(CARD_TEMPLATE)
-    );
+    /**
+     * Templates of the elements that are converted. Every element is searched on the main thread,
+     * so the element is searched as a string in native code, see {@link FeedVideoCardsPatch#getElementText(byte[])}.
+     */
+    private static final String[] elementTemplates = CARD_LAYOUT
+            ? new String[]{CLASSIC_TEMPLATE, SHELF_HEADER_TEMPLATE, HORIZONTAL_SHELF_TEMPLATE,
+            SHORTS_VIDEO_CELL_TEMPLATE, SHORTS_SHELF_TEMPLATE, GRID_VIDEO_TEMPLATE}
+            : new String[]{CARD_TEMPLATE};
     /**
      * Label of the shelf headers, in the bytes of the converted elements.
      */
     private static final ByteTrieSearch shelfHeaderLabelSearch = new ByteTrieSearch(
             ByteTrieSearch.convertStringsToBytes(String.valueOf(SHELF_HEADER_LABEL_MARKER))
+    );
+    /**
+     * Link to the movies page, in the bytes of the movies.
+     */
+    private static final ByteTrieSearch moviesPageSearch = new ByteTrieSearch(
+            ByteTrieSearch.convertStringsToBytes("FEstorefront")
     );
     /**
      * Thumbnails of the Shorts, the same that the Shorts filter looks for.
@@ -442,13 +465,13 @@ public class FeedCardLayoutPatch {
     private static volatile long commentsRequestTime;
 
     /**
-     * Template of the feed videos that the elements are converted to.
+     * Template that the elements are converted to, such as the feed videos.
      * The uri includes the hash of the template version, and the subscriptions of the element write
      * the theme and the capabilities to fields of the model. Both are taken from the elements of the template
      * that the server sends, so they follow the new versions of the template. Until such an element is seen,
      * the uri is taken from the template cache of the app, and the fields are the known ones.
      */
-    private static final class VideoTemplate {
+    static final class VideoTemplate {
         final String name;
         final int modelField;
         final ByteTrieSearch search;
@@ -550,14 +573,15 @@ public class FeedCardLayoutPatch {
      */
     public static byte[] setFeedCardLayout(byte[] bytes) {
         try {
-            if (!elementSearch.matches(bytes)) {
+            final String elementText = FeedVideoCardsPatch.getElementText(bytes);
+            if (!Utils.containsAny(elementText, elementTemplates)) {
                 // The elements of the layout of the setting give the current version of its template:
                 // the uri and the fields are taken from the element, if it's an element of the template.
                 // After the first element, the elements are checked once in a while, to follow a new version.
                 VideoTemplate template = CARD_LAYOUT ? CARD : CLASSIC;
                 final long now = System.currentTimeMillis();
                 if ((!template.fromElement || now - template.checkTime >= TEMPLATE_CHECK_INTERVAL_MILLIS)
-                        && template.search.matches(bytes)) {
+                        && elementText.contains(template.name)) {
                     ComponentType componentType = Element.parseFrom(bytes).getType().getComponentType();
                     String elementUri = componentType.getTemplateConfig().getUriTemplateConfig().getUri();
                     if (isTemplate(elementUri, template.name)) {
@@ -612,9 +636,17 @@ public class FeedCardLayoutPatch {
                             break toCard;
                         }
 
-                        // The filters find the hidden Shorts and live streams by the classic layout.
+                        // The filters find the hidden Shorts, live streams, mix playlists and movies by the classic layout.
                         if (thumbnail.getBadgeStyle() == THUMBNAIL_BADGE_STYLE_LIVE
                                 && Settings.HIDE_LIVE_STREAMS.get()) {
+                            break toCard;
+                        }
+                        // The mix playlists are found by the url of the mix, which the cards don't have.
+                        if (LayoutComponentsFilter.filterMixPlaylists(bytes)) {
+                            break toCard;
+                        }
+                        // The movies are found by the link to the movies page, as in the ads filter.
+                        if (Settings.HIDE_MOVIES_SECTION.get() && moviesPageSearch.matches(bytes)) {
                             break toCard;
                         }
                         if ((Settings.HIDE_SHORTS_HOME.get() || Settings.HIDE_SHORTS_SUBSCRIPTIONS.get()
@@ -1014,8 +1046,14 @@ public class FeedCardLayoutPatch {
                 LockupModel card = model.getLockupModel();
                 toClassic: {
                     LockupViewModel lockupViewModel = card.getViewModel().getLockupViewModel();
-                    if (lockupViewModel.getContentType() != LOCKUP_CONTENT_TYPE_VIDEO
-                            || !lockupViewModel.getContentImage().hasThumbnailViewModel()) {
+                    final boolean isPlaylist = lockupViewModel.getContentType() == LOCKUP_CONTENT_TYPE_PLAYLIST;
+                    ContentImage contentImage = lockupViewModel.getContentImage();
+                    // The playlists and the mixes show a stack of thumbnails.
+                    ThumbnailViewModel thumbnailViewModel = contentImage.hasCollectionThumbnailViewModel()
+                            ? contentImage.getCollectionThumbnailViewModel().getPrimaryThumbnail().getThumbnailViewModel()
+                            : contentImage.getThumbnailViewModel();
+                    if ((!isPlaylist && lockupViewModel.getContentType() != LOCKUP_CONTENT_TYPE_VIDEO)
+                            || thumbnailViewModel.getImage().isEmpty()) {
                         break toClassic;
                     }
 
@@ -1024,18 +1062,43 @@ public class FeedCardLayoutPatch {
                         break toClassic;
                     }
 
-                    ThumbnailViewModel thumbnailViewModel = lockupViewModel.getContentImage().getThumbnailViewModel();
                     VideoThumbnail.Builder thumbnail = VideoThumbnail.newBuilder()
                             .setImage(thumbnailViewModel.getImage());
                     for (ThumbnailOverlay overlay : thumbnailViewModel.getOverlaysList()) {
-                        for (ThumbnailBadge badge : overlay.getThumbnailBottomOverlayViewModel().getBadgesList()) {
+                        List<ThumbnailBadge> badges = overlay.hasThumbnailOverlayBadgeViewModel()
+                                ? overlay.getThumbnailOverlayBadgeViewModel().getThumbnailBadgesList()
+                                : overlay.getThumbnailBottomOverlayViewModel().getBadgesList();
+                        for (ThumbnailBadge badge : badges) {
                             ThumbnailBadgeViewModel badgeViewModel = badge.getThumbnailBadgeViewModel();
                             if (!badgeViewModel.getText().isEmpty()) {
-                                thumbnail.setTimestampText(badgeViewModel.getText())
-                                        .setTimestampAccessibilityText(badgeViewModel.getRendererContext()
-                                                .getAccessibilityContext().getLabel());
+                                if (isPlaylist) {
+                                    thumbnail.setVideoCountText(badgeViewModel.getText());
+                                } else {
+                                    thumbnail.setTimestampText(badgeViewModel.getText())
+                                            .setTimestampAccessibilityText(badgeViewModel.getRendererContext()
+                                                    .getAccessibilityContext().getLabel());
+                                }
                             }
                         }
+                    }
+
+                    final String playlistId = lockupViewModel.getContentId();
+                    Matcher mixVideoId = VIDEO_ID_PATTERN.matcher(
+                            thumbnailViewModel.getImage().toString(StandardCharsets.ISO_8859_1));
+                    final boolean isMix = isPlaylist && playlistId.startsWith(MIX_PLAYLIST_ID_PREFIX) && mixVideoId.find();
+                    if (isPlaylist) {
+                        // The server samples these colors from the thumbnail, so the gray values are used.
+                        thumbnail.setIsPlaylist(!isMix)
+                                .setIsMix(isMix)
+                                .setCollectionStyle1(1)
+                                .setCollectionStyle2(1)
+                                .setCollectionStyle3(3)
+                                .setBadgeIconType(isMix ? MIX_BADGE_ICON_TYPE : PLAYLIST_BADGE_ICON_TYPE)
+                                .setBadgeColor(COLLECTION_BADGE_COLOR)
+                                .setBadgeDarkColor(COLLECTION_BADGE_DARK_COLOR)
+                                .setStackColors(CollectionStackColors.newBuilder()
+                                        .setFrontColor(COLLECTION_STACK_FRONT_COLOR)
+                                        .setBackColor(COLLECTION_STACK_BACK_COLOR));
                     }
 
                     LockupMetadataViewModel metadata = lockupViewModel.getMetadata().getLockupMetadataViewModel();
@@ -1091,6 +1154,12 @@ public class FeedCardLayoutPatch {
                                             .clearMenuButton()
                                             .clearTitleStyle()
                                             .clearActionButtons()));
+                    if (isPlaylist) {
+                        // The mix playlists are found by the url of the mix, which the cards don't have.
+                        videoData.setUrl(isMix
+                                ? "https://www.youtube.com/watch?v=" + mixVideoId.group(1) + "&list=" + playlistId
+                                : "https://www.youtube.com/playlist?list=" + playlistId);
+                    }
                     if (metadata.getImage().hasDecoratedAvatarViewModel()) {
                         DecoratedAvatarViewModel avatar = metadata.getImage().getDecoratedAvatarViewModel();
                         AvatarViewModel avatarViewModel = avatar.getAvatar().getAvatarViewModel();
@@ -1105,6 +1174,7 @@ public class FeedCardLayoutPatch {
                     RendererContext rendererContext = lockupViewModel.getRendererContext();
                     VideoWithContextModel classic = VideoWithContextModel.newBuilder()
                             .setData(VideoWithContextData.newBuilder()
+                                    .setCollectionStack(isPlaylist ? 1 : 0)
                                     .setVideoData(videoData)
                                     .setAccessibilityText(rendererContext.getAccessibilityContext().getLabel())
                                     .setMenuAccessibilityText(menuButton.getAccessibilityText())
@@ -1119,6 +1189,17 @@ public class FeedCardLayoutPatch {
                             .setTemplateConfig(templateConfig(templateUri))
                             .setModel(ElementModel.newBuilder().setVideoWithContextModel(classic))
                             .setSubscriptionConfig(subscriptionConfig(componentType.getSubscriptionConfig(), CLASSIC))
+                            .build();
+                }
+
+                // The other cards, such as the posts, have no classic layout. The experiments of the card layout are
+                // sent only to the accounts of the A/B test, so without them the card style is not drawn.
+                ElementsExperiments experiments = card.getContext().getElementsExperiments();
+                if (converted == null && experiments.hasCardLayoutExperiments()) {
+                    converted = componentType.toBuilder()
+                            .setModel(model.toBuilder().setLockupModel(card.toBuilder()
+                                    .setContext(card.getContext().toBuilder()
+                                            .setElementsExperiments(experiments.toBuilder().clearCardLayoutExperiments()))))
                             .build();
                 }
             }
@@ -2208,7 +2289,7 @@ public class FeedCardLayoutPatch {
                 .build();
     }
 
-    private static TemplateConfig templateConfig(String uri) {
+    static TemplateConfig templateConfig(String uri) {
         return TemplateConfig.newBuilder()
                 .setUriTemplateConfig(UriTemplateConfig.newBuilder().setUri(uri))
                 .build();
@@ -2217,7 +2298,7 @@ public class FeedCardLayoutPatch {
     /**
      * Keeps only the theme and capabilities subscriptions, written to the fields of the new model.
      */
-    private static SubscriptionConfig subscriptionConfig(SubscriptionConfig config, VideoTemplate template) {
+    static SubscriptionConfig subscriptionConfig(SubscriptionConfig config, VideoTemplate template) {
         SubscriptionConfig.Builder builder = SubscriptionConfig.newBuilder();
         if (config.hasThemeSubscriptionConfig()) {
             ThemeSubscriptionConfig theme = config.getThemeSubscriptionConfig();

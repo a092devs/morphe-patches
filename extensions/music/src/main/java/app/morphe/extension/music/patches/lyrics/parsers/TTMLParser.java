@@ -52,25 +52,27 @@ public final class TTMLParser {
     private static final String NS_XML = "http://www.w3.org/XML/1998/namespace";
     private static final String NS_TTS = "http://www.w3.org/ns/ttml#styling";
     private static final String NS_AMLL = "http://www.example.com/ns/amll";
+    private static final String NS_COMPOSER = "https://composer.betterlyrics.org/ttml";
+    private static final String NS_COMPOSER_LEGACY = "https://composer.boidu.dev/ttml";
 
     private static final Set<String> AMLL_EXCLUDED_KEYS = Set.of(
             "ncmMusicId", "qqMusicId", "spotifyId", "appleMusicId", "isrc", "ttmlAuthorGithub"
+    );
+
+    private static final Set<String> COMPOSER_EXCLUDED_KEYS = Set.of(
+            "isrc", "songwriter", "songwriters", "ytVideoId", "language"
     );
 
     /** IoU minimum overlap threshold for romanization alignment. */
     private static final double MIN_IOU = 0.1;
     /** Fast-track tolerance: if start times differ by ≤2ms, consider them aligned. */
     private static final long FAST_TRACK_MS = 2;
+    private static final String AGENT_TYPE_PERSON = "person";
+    private static final String AGENT_TYPE_GROUP = "group";
+    private static final String AGENT_TYPE_OTHER = "other";
 
     private TTMLParser() {
     }
-
-    private record HeadMetadata(
-            List<String> songwriters,
-            List<String> amllCredits,
-            Map<String, AgentInfo> agentTypes,
-            Map<String, List<RomajiSyllable>> sidecarRoman,
-            Map<String, SidecarTranslation> sidecarTrans) {}
 
     private static HeadMetadata parseHeadMetadata(String ttml) {
         List<String> songwriters = new ArrayList<>();
@@ -116,13 +118,8 @@ public final class TTMLParser {
                             } else {
                                 songwritersDepth++;
                             }
-                        } else if ("meta".equals(local) && NS_AMLL.equals(p.getNamespace())) {
-                            final String key = getAttr(p, NS_AMLL, "key", "amll:key");
-                            final String value = getAttr(p, NS_AMLL, "value", "amll:value");
-                            if (key != null && value != null && !key.isEmpty() && !value.isEmpty()
-                                    && !AMLL_EXCLUDED_KEYS.contains(key)) {
-                                amllCredits.add(key + ": " + value.trim());
-                            }
+                        } else if ("meta".equals(local) && isMetaNamespace(p)) {
+                            collectMetaCredit(p, amllCredits);
                         } else if ("agent".equals(local)) {
                             agentId = getAttr(p, NS_TTM, "id", "xml:id");
                             agentType = getAttr(p, NS_TTM, "type", "ttm:type");
@@ -169,25 +166,6 @@ public final class TTMLParser {
 
         return new HeadMetadata(songwriters, amllCredits, agentTypes, sidecarRoman, sidecarTrans);
     }
-
-    private static final String AGENT_TYPE_PERSON = "person";
-    private static final String AGENT_TYPE_GROUP = "group";
-    private static final String AGENT_TYPE_OTHER = "other";
-
-    public record TtmlResult(List<LyricsLine> lines,
-                      @Nullable List<LyricsLine> romanization,
-                      @Nullable Map<String, List<LyricsLine>> translations,
-                      @Nullable Map<String, List<LyricsLine>> romanizations,
-                      @Nullable List<String> songwriters,
-                      @Nullable List<String> amllCreditLines,
-                      @Nullable Map<String, String> agentNames) {}
-
-    private record RomajiSyllable(long startMs, long endMs, String text) {}
-
-    private record AgentInfo(String type, @Nullable String name) {}
-
-    private record SidecarTranslation(String text, @Nullable List<Word> words,
-                                      @Nullable String bgText, @Nullable List<Word> bgWords) {}
 
     @Nullable
     public static TtmlResult parse(String ttml) {
@@ -422,7 +400,7 @@ public final class TTMLParser {
             boolean isDuet;
 
             if (agentNum > 0) {
-                isDuet = (agentNum % 2 == 0);
+                isDuet = !LyricsLine.isCenteredAgentId(agentId) && (agentNum % 2 == 0);
             } else {
                 final AgentInfo info = agentTypes.get(agentId);
                 final String type = info != null ? info.type() : AGENT_TYPE_PERSON;
@@ -466,7 +444,7 @@ public final class TTMLParser {
     }
 
     private static void collectSidecarTransliterations(XmlPullParser p,
-            Map<String, List<RomajiSyllable>> map)
+                                                       Map<String, List<RomajiSyllable>> map)
             throws XmlPullParserException, IOException {
         int depth = 1;
         while (depth > 0) {
@@ -489,8 +467,8 @@ public final class TTMLParser {
     }
 
     private static void collectOneTransliteration(XmlPullParser p,
-            @Nullable String lang,
-            Map<String, List<RomajiSyllable>> map)
+                                                  @Nullable String lang,
+                                                  Map<String, List<RomajiSyllable>> map)
             throws XmlPullParserException, IOException {
         int depth = 1;
         while (depth > 0) {
@@ -563,7 +541,7 @@ public final class TTMLParser {
     }
 
     private static void collectSidecarTranslations(XmlPullParser p,
-            Map<String, SidecarTranslation> map)
+                                                   Map<String, SidecarTranslation> map)
             throws XmlPullParserException, IOException {
         int depth = 1;
         int eventCount = 0;
@@ -593,7 +571,7 @@ public final class TTMLParser {
     }
 
     private static void collectOneTranslation(XmlPullParser p, String lang,
-            Map<String, SidecarTranslation> map)
+                                              Map<String, SidecarTranslation> map)
             throws XmlPullParserException, IOException {
         int depth = 1;
         while (depth > 0) {
@@ -797,14 +775,6 @@ public final class TTMLParser {
         return new SidecarTranslation(main, finalMainWords,
                 bg.isEmpty() ? null : bg, finalBgWords);
     }
-
-    private record ParsedLine(long begin, long end, String text, List<Word> words,
-                              List<LyricsLine> bgLines,
-                              @Nullable String bgAgentId,
-                              @Nullable Map<String, String> inlineTranslations,
-                              @Nullable Map<String, String> inlineRomanizations,
-                              @Nullable Map<String, String> bgInlineTranslations,
-                              @Nullable Map<String, String> bgInlineRomanizations) {}
 
     private static ParsedLine processPElement(XmlPullParser p, long pBegin, long pEnd)
             throws XmlPullParserException, IOException {
@@ -1274,7 +1244,7 @@ public final class TTMLParser {
     }
 
     private static void alignRomajiToWords(List<Word> words,
-            List<RomajiSyllable> sidecar) {
+                                           List<RomajiSyllable> sidecar) {
         if (words.isEmpty() || sidecar.isEmpty()) {
             return;
         }
@@ -1332,7 +1302,7 @@ public final class TTMLParser {
 
     @Nullable
     private static List<RomajiSyllable> findSidecarRoman(String lineId,
-            Map<String, List<RomajiSyllable>> sidecarRoman) {
+                                                         Map<String, List<RomajiSyllable>> sidecarRoman) {
         final List<RomajiSyllable> exact = sidecarRoman.get(lineId);
         if (exact != null) return exact;
         for (Map.Entry<String, List<RomajiSyllable>> e : sidecarRoman.entrySet()) {
@@ -1386,10 +1356,10 @@ public final class TTMLParser {
     }
 
     private static void buildRomanizations(String lineId,
-            Map<String, List<RomajiSyllable>> sidecarRoman,
-            List<Word> words,
-            Map<String, List<LyricsLine>> romanizations,
-            int mainIndex, int bgCount) {
+                                           Map<String, List<RomajiSyllable>> sidecarRoman,
+                                           List<Word> words,
+                                           Map<String, List<LyricsLine>> romanizations,
+                                           int mainIndex, int bgCount) {
         // Keys may be "lang:lineId" or just "lineId" (no language)
         for (Map.Entry<String, List<RomajiSyllable>> entry : sidecarRoman.entrySet()) {
             final String key = entry.getKey();
@@ -1453,8 +1423,8 @@ public final class TTMLParser {
     }
 
     private static void buildTranslations(String lineId,
-            Map<String, SidecarTranslation> sidecarTrans,
-            Map<String, List<LyricsLine>> translations, int mainIndex, int bgCount) {
+                                          Map<String, SidecarTranslation> sidecarTrans,
+                                          Map<String, List<LyricsLine>> translations, int mainIndex, int bgCount) {
 
         final Map<String, SidecarTranslation> mainByLang = new HashMap<>();
         final Map<String, SidecarTranslation> bgByLang = new HashMap<>();
@@ -1603,8 +1573,30 @@ public final class TTMLParser {
         return colon >= 0 ? name.substring(colon + 1) : name;
     }
 
+    private static boolean isMetaNamespace(XmlPullParser p) {
+        final String ns = p.getNamespace();
+        if (NS_AMLL.equals(ns) || NS_COMPOSER.equals(ns) || NS_COMPOSER_LEGACY.equals(ns)) {
+            return true;
+        }
+        final String raw = p.getName();
+        return raw != null && raw.startsWith("composer:");
+    }
+
+    private static void collectMetaCredit(XmlPullParser p, List<String> credits) {
+        final String ns = p.getNamespace();
+        final String key = getAttr(p, ns, "key", "key");
+        final String value = getAttr(p, ns, "value", "value");
+        if (key == null || value == null || key.isEmpty() || value.isEmpty()) {
+            return;
+        }
+        final Set<String> excluded = NS_AMLL.equals(ns) ? AMLL_EXCLUDED_KEYS : COMPOSER_EXCLUDED_KEYS;
+        if (!excluded.contains(key)) {
+            credits.add(key + ": " + value.trim());
+        }
+    }
+
     private static String getAttr(XmlPullParser p, @Nullable String ns,
-            String local, @Nullable String fallbackQName) {
+                                  String local, @Nullable String fallbackQName) {
         if (ns != null) {
             final String val = p.getAttributeValue(ns, local);
             if (val != null) return val;
@@ -1628,7 +1620,7 @@ public final class TTMLParser {
 
     @Nullable
     public static Lyrics ttmlToLyrics(String ttml, String providerName,
-            @Nullable String sourceUrl) {
+                                      @Nullable String sourceUrl) {
         if (ttml == null || ttml.isEmpty()) return null;
         TtmlResult result = parse(ttml);
         if (result == null || result.lines().isEmpty()) return null;
@@ -1643,7 +1635,7 @@ public final class TTMLParser {
 
     @Nullable
     private static List<String> combineCredits(@Nullable List<String> existing,
-            @Nullable List<String> amllCredits) {
+                                               @Nullable List<String> amllCredits) {
         if (existing == null && amllCredits == null) {
             return null;
         }
@@ -1656,5 +1648,41 @@ public final class TTMLParser {
         List<String> combined = new ArrayList<>(existing);
         combined.addAll(amllCredits);
         return combined;
+    }
+
+    private record HeadMetadata(
+            List<String> songwriters,
+            List<String> amllCredits,
+            Map<String, AgentInfo> agentTypes,
+            Map<String, List<RomajiSyllable>> sidecarRoman,
+            Map<String, SidecarTranslation> sidecarTrans) {
+    }
+
+    public record TtmlResult(List<LyricsLine> lines,
+                             @Nullable List<LyricsLine> romanization,
+                             @Nullable Map<String, List<LyricsLine>> translations,
+                             @Nullable Map<String, List<LyricsLine>> romanizations,
+                             @Nullable List<String> songwriters,
+                             @Nullable List<String> amllCreditLines,
+                             @Nullable Map<String, String> agentNames) {
+    }
+
+    private record RomajiSyllable(long startMs, long endMs, String text) {
+    }
+
+    private record AgentInfo(String type, @Nullable String name) {
+    }
+
+    private record SidecarTranslation(String text, @Nullable List<Word> words,
+                                      @Nullable String bgText, @Nullable List<Word> bgWords) {
+    }
+
+    private record ParsedLine(long begin, long end, String text, List<Word> words,
+                              List<LyricsLine> bgLines,
+                              @Nullable String bgAgentId,
+                              @Nullable Map<String, String> inlineTranslations,
+                              @Nullable Map<String, String> inlineRomanizations,
+                              @Nullable Map<String, String> bgInlineTranslations,
+                              @Nullable Map<String, String> bgInlineRomanizations) {
     }
 }

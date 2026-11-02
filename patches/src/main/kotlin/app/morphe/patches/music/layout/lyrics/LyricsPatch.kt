@@ -25,7 +25,6 @@ import app.morphe.patches.shared.MediaSessionSetMetadataFingerprint
 import app.morphe.patches.shared.MediaSessionSetPlaybackStateFingerprint
 import app.morphe.patches.shared.misc.litho.filter.addLithoFilter
 import app.morphe.patches.shared.misc.settings.preference.InputType
-import app.morphe.patches.shared.misc.settings.preference.ListPreference
 import app.morphe.patches.shared.misc.settings.preference.NonInteractivePreference
 import app.morphe.patches.shared.misc.settings.preference.PreferenceCategory
 import app.morphe.patches.shared.misc.settings.preference.PreferenceScreenPreference.Sorting
@@ -100,6 +99,37 @@ val lyricsPatch = bytecodePatch(
                         dependency = "morphe_music_lyrics_enabled"
                     ),
                     NonInteractivePreference(
+                        key = "morphe_music_lyrics_translation_provider",
+                        summaryKey = null,
+                        tag = "app.morphe.extension.music.settings.preference.LyricsOrderedListPreference",
+                        selectable = false,
+                        dependency = "morphe_music_lyrics_enabled"
+                    ),
+                    NonInteractivePreference(
+                        key = "morphe_music_lyrics_translation_language",
+                        titleKey = null,
+                        summaryKey = null,
+                        tag = "app.morphe.extension.music.settings.preference.LyricsTargetLanguagePreference",
+                        selectable = true,
+                        dependency = "morphe_music_lyrics_enabled"
+                    ),
+                    NonInteractivePreference(
+                        key = "morphe_music_lyrics_romanization_provider",
+                        summaryKey = null,
+                        tag = "app.morphe.extension.music.settings.preference.LyricsOrderedListPreference",
+                        selectable = false,
+                        dependency = "morphe_music_lyrics_enabled"
+                    ),
+                    NonInteractivePreference(
+                        key = "morphe_music_lyrics_romanize_language",
+                        titleKey = null,
+                        summaryKey = null,
+                        tag = "app.morphe.extension.music.settings.preference.LyricsTargetLanguagePreference",
+                        selectable = true,
+                        dependency = "morphe_music_lyrics_enabled"
+                    ),
+                    SwitchPreference("morphe_music_lyrics_allow_transliteration", summary = true),
+                    NonInteractivePreference(
                         key = "morphe_music_lyrics_clear_cache",
                         tag = "app.morphe.extension.music.settings.preference.LyricsClearCachePreference",
                         dependency = "morphe_music_lyrics_enabled"
@@ -118,11 +148,21 @@ val lyricsPatch = bytecodePatch(
                         dependency = "morphe_music_lyrics_enabled"
                     ),
                     SwitchPreference("morphe_music_lyrics_word_sync", summary = true),
+                    SwitchPreference("morphe_music_lyrics_line_scale", summary = true),
                     SwitchPreference("morphe_music_lyrics_split_background", summary = true),
                     SwitchPreference("morphe_music_lyrics_show_section", summary = true),
+                    SwitchPreference(
+                        key = "morphe_music_lyrics_use_ai_section",
+                        summary = true,
+                        tag = "app.morphe.extension.music.settings.preference.LyricsAiPromptPreference"
+                    ),
                     SwitchPreference("morphe_music_lyrics_hide_played", summary = true),
                     SwitchPreference("morphe_music_lyrics_hide_unplayed", summary = true),
-                    SwitchPreference("morphe_music_lyrics_hide_info", summary = true)
+                    SwitchPreference("morphe_music_lyrics_hide_info", summary = true),
+                    SwitchPreference("morphe_music_lyrics_force_capitalize", summary = true),
+                    SwitchPreference("morphe_music_lyrics_strip_trailing_punctuation", summary = true),
+                    SwitchPreference("morphe_music_lyrics_swap_trans_roma", summary = true),
+                    SwitchPreference("morphe_music_lyrics_force_center", summary = true)
                 )
             ),
             PreferenceCategory(
@@ -135,36 +175,6 @@ val lyricsPatch = bytecodePatch(
                     SwitchPreference("morphe_music_lyrics_show_refresh_button", summary = true),
                     SwitchPreference("morphe_music_lyrics_show_translate_button", summary = true),
                     SwitchPreference("morphe_music_lyrics_show_romanize_button", summary = true)
-                )
-            ),
-            PreferenceCategory(
-                key = "morphe_music_lyrics_section_translation",
-                sorting = Sorting.UNSORTED,
-                preferences = setOf(
-                    ListPreference(
-                        key = "morphe_music_lyrics_translation_provider"
-                    ),
-                    ListPreference(
-                        key = "morphe_music_lyrics_translation_language",
-                        entriesKey = "morphe_language_entries",
-                        entryValuesKey = "morphe_language_entry_values"
-                    )
-                )
-            ),
-            PreferenceCategory(
-                key = "morphe_music_lyrics_section_romanization",
-                sorting = Sorting.UNSORTED,
-                preferences = setOf(
-                    ListPreference(
-                        key = "morphe_music_lyrics_romanization_provider"
-                    ),
-                    ListPreference(key = "morphe_music_lyrics_romanize_language"),
-                    SwitchPreference(
-                        key = "morphe_music_lyrics_local_romanization",
-                        summary = true,
-                        tag = "app.morphe.extension.music.settings.preference.LyricsLocalRomanizationPreference"
-                    ),
-                    SwitchPreference("morphe_music_lyrics_swap_trans_roma", summary = true)
                 )
             ),
             PreferenceCategory(
@@ -181,30 +191,32 @@ val lyricsPatch = bytecodePatch(
                     SwitchPreference("morphe_music_lyrics_sb_matching", summary = true),
                     SwitchPreference("morphe_music_lyrics_miniplayer", summary = true),
                     SwitchPreference("morphe_music_lyrics_mediasession", summary = true),
-                    SwitchPreference("morphe_music_lyrics_display_artist_first", summary = true)
-                )
-            ),
-            PreferenceCategory(
-                key = "morphe_music_lyrics_section_ai_endpoint",
-                sorting = Sorting.UNSORTED,
-                preferences = setOf(
                     NonInteractivePreference(
-                        key = "morphe_music_lyrics_ai_config",
-                        titleKey = "morphe_music_lyrics_ai_config_dialog_title",
-                        summaryKey = null,
-                        tag = "app.morphe.extension.music.settings.preference.LyricsAiConfigPreference",
+                        key = "morphe_music_lyrics_mini_track_format",
+                        summaryKey = "morphe_music_lyrics_mini_track_format_menu_summary",
+                        tag = "app.morphe.extension.music.settings.preference.LyricsTrackFormatPreference",
                         selectable = true,
                         dependency = "morphe_music_lyrics_enabled"
                     ),
-                    SwitchPreference(
-                        key = "morphe_music_lyrics_use_ai_section",
-                        summary = true
+                    TextPreference(
+                        key = "morphe_music_lyrics_mini_encapsulation",
+                        tag = "app.morphe.extension.music.settings.preference.LyricsEncapsulationPreference"
                     ),
                     NonInteractivePreference(
-                        key = "morphe_music_lyrics_transcribe_key",
-                        titleKey = "morphe_music_lyrics_transcribe_key_title",
-                        summaryKey = "morphe_music_lyrics_transcribe_key_summary",
-                        tag = "app.morphe.extension.music.settings.preference.LyricsTranscribeKeyPreference",
+                        key = "morphe_music_lyrics_mini_line_limits",
+                        summaryKey = "morphe_music_lyrics_mini_line_limits_summary",
+                        tag = "app.morphe.extension.music.settings.preference.LyricsLineLimitsPreference",
+                        selectable = true,
+                        dependency = "morphe_music_lyrics_enabled"
+                    ),
+                    TextPreference(
+                        key = "morphe_music_lyrics_mini_instrumental",
+                        inputType = InputType.TEXT_MULTI_LINE
+                    ),
+                    NonInteractivePreference(
+                        key = "morphe_music_lyrics_mini_next_offset_ms",
+                        summaryKey = "morphe_music_lyrics_mini_next_offset_ms_summary",
+                        tag = "app.morphe.extension.shared.settings.preference.SeekBarPreference",
                         selectable = true,
                         dependency = "morphe_music_lyrics_enabled"
                     )
@@ -247,6 +259,13 @@ val lyricsPatch = bytecodePatch(
         // The panel content is built by Elements, so there is no view to hook. The timed
         // lyrics component is the earliest signal that the opened panel is the lyrics one.
         addLithoFilter(LYRICS_PANEL_FILTER)
+
+        // Some accounts get lyrics as a player tab instead of an engagement panel. A tab page can
+        // be built long before it is selected, so the litho filter alone can't install the panel.
+        TabbedViewTabSelectedFingerprint.method.addInstruction(
+            0,
+            "invoke-static { p0 }, $PANEL_INSTALLER_CLASS->onTabSelected(Landroid/view/ViewGroup;)V"
+        )
 
         // Some accounts get the panel without a heading, and then nothing in the view tree
         // tells the lyrics panel from the other panels sharing the same container. The panel

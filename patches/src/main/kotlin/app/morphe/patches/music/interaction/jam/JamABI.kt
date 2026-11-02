@@ -17,6 +17,7 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.newInstance
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.util.getReference
+import app.morphe.patches.shared.misc.fix.proto.protoDefaultInstanceFingerprint
 import app.morphe.util.findInstructionIndicesReversed
 import app.morphe.util.findInstructionIndicesReversedOrThrow
 import app.morphe.util.getMutableMethod
@@ -300,7 +301,7 @@ private fun BytecodePatchContext.resolveLocalMode(mode: MethodReference): FieldR
     require(AccessFlags.ENUM.isSet(enum.accessFlags)) { "Jam queue mode is not an enum" }
     return localQueueModeFingerprint(enum.type)
         .instructionMatches[2]
-        .getFieldAccessed()
+        .fieldReference
 }
 
 internal fun BytecodePatchContext.resolveDisplays(

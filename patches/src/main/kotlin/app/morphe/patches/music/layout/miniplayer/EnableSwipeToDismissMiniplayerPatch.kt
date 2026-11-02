@@ -22,6 +22,7 @@ import app.morphe.patcher.util.getReference
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.music.misc.extension.sharedExtensionPatch
+import app.morphe.patches.music.misc.playservice.is_9_43_or_greater
 import app.morphe.patches.music.misc.playservice.versionCheckPatch
 import app.morphe.patches.music.misc.settings.PreferenceScreen
 import app.morphe.patches.music.misc.settings.settingsPatch
@@ -64,8 +65,7 @@ val enableSwipeToDismissMiniplayerPatch = bytecodePatch(
 
         val interactionLoggingSwipeField = InteractionLoggingEnumFingerprint
             .instructionMatches[1]
-            .instruction
-            .getReference<FieldReference>()!!
+            .fieldReference
 
         val widgetReferences = mutableListOf<Reference>()
         val widgetInstructionMatches = MusicActivityWidgetFingerprint.instructionMatches
@@ -219,17 +219,44 @@ val enableSwipeToDismissMiniplayerPatch = bytecodePatch(
 
         // region Disable player page motion event
 
-        PlayerPageBehaviorFingerprint.method.addInstructionsWithLabels(
-            0,
-            """
-                invoke-static { }, $EXTENSION_CLASS->enableSwipeToDismissMiniplayer()Z
-                move-result v0
-                if-eqz v0, :ignore
-                return-void
-                :ignore
-                nop
-            """
-        )
+        if (is_9_43_or_greater) {
+            // The motion field is now set directly from several places,
+            // but it is only read by the touch methods. Clear it before they run.
+            val motionField = PlayerPageBehaviorInterceptTouchEventFingerprint
+                .instructionMatches
+                .first()
+                .fieldReference
+
+            listOf(
+                PlayerPageBehaviorInterceptTouchEventFingerprint,
+                PlayerPageBehaviorTouchEventFingerprint
+            ).forEach {
+                it.method.addInstructionsWithLabels(
+                    0,
+                    """
+                        invoke-static { }, $EXTENSION_CLASS->enableSwipeToDismissMiniplayer()Z
+                        move-result v0
+                        if-eqz v0, :ignore
+                        const/4 v0, 0x0
+                        iput-boolean v0, p0, $motionField
+                        :ignore
+                        nop
+                    """
+                )
+            }
+        } else {
+            PlayerPageBehaviorFingerprint.method.addInstructionsWithLabels(
+                0,
+                """
+                    invoke-static { }, $EXTENSION_CLASS->enableSwipeToDismissMiniplayer()Z
+                    move-result v0
+                    if-eqz v0, :ignore
+                    return-void
+                    :ignore
+                    nop
+                """
+            )
+        }
 
         // endregion
 

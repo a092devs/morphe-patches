@@ -24,7 +24,6 @@ import app.morphe.patches.shared.misc.settings.preference.NonInteractivePreferen
 import app.morphe.patches.shared.misc.settings.preference.SwitchPreference
 import app.morphe.patches.shared.misc.settings.preference.noTitleUnsortedPreferenceCategory
 import app.morphe.patches.youtube.misc.extension.sharedExtensionPatch
-import app.morphe.patches.youtube.misc.playservice.is_20_28_or_greater
 import app.morphe.patches.youtube.misc.playservice.is_21_35_or_greater
 import app.morphe.patches.youtube.misc.playservice.is_21_42_or_greater
 import app.morphe.patches.youtube.misc.playservice.versionCheckPatch
@@ -46,7 +45,7 @@ private const val EXTENSION_CLASS =
 
 val hidePlayerOverlayButtonsPatch = bytecodePatch(
     name = "Hide player overlay buttons",
-    description = "Adds options to hide the player Cast, Autoplay, Captions, Previous & Next buttons, " +
+    description = "Adds options to hide the Cast button, the player Autoplay, Captions, Previous & Next buttons, " +
             "and to hide or change the opacity of the player control buttons background.",
 ) {
     dependsOn(
@@ -63,7 +62,7 @@ val hidePlayerOverlayButtonsPatch = bytecodePatch(
             noTitleUnsortedPreferenceCategory(
                 SwitchPreference("morphe_hide_autoplay_button"),
                 SwitchPreference("morphe_hide_captions_button"),
-                SwitchPreference("morphe_hide_cast_button"),
+                SwitchPreference("morphe_hide_cast_button", summary = true),
                 SwitchPreference("morphe_hide_collapse_button"),
                 SwitchPreference("morphe_hide_fullscreen_button"),
                 SwitchPreference("morphe_hide_player_control_buttons_background", summary = true),
@@ -161,17 +160,43 @@ val hidePlayerOverlayButtonsPatch = bytecodePatch(
             }
         }
 
-        if (is_20_28_or_greater) {
-            arrayOf(
-                CastButtonPlayerFeatureFlagFingerprint,
-                CastButtonActionFeatureFlagFingerprint // Cast button in the feed.
-            ).forEach { fingerprint ->
-                fingerprint.matchAll().forEach {
-                    it.method.insertLiteralOverride(
-                        it.instructionMatches.first().index,
-                        "$EXTENSION_CLASS->hideCastButton(Z)Z"
-                    )
-                }
+        arrayOf(
+            CastButtonPlayerFeatureFlagFingerprint,
+            CastButtonActionFeatureFlagFingerprint // Cast button in the feed.
+        ).forEach { fingerprint ->
+            fingerprint.matchAll().forEach {
+                it.method.insertLiteralOverride(
+                    it.instructionMatches.first().index,
+                    "$EXTENSION_CLASS->hideCastButton(Z)Z"
+                )
+            }
+        }
+
+        // Cast button in the toolbar.
+        CastMenuItemInitializeFingerprint.let {
+            it.method.apply {
+                val index = it.instructionMatches.last().index
+                val menuItemRegister = getInstruction<FiveRegisterInstruction>(index).registerC
+
+                addInstruction(
+                    index,
+                    "invoke-static { v$menuItemRegister }, $EXTENSION_CLASS->hideCastButton(Landroid/view/MenuItem;)V"
+                )
+            }
+        }
+
+        CastMenuItemVisibilityFingerprint.let {
+            it.method.apply {
+                val index = it.instructionMatches.last().index
+                val visibilityRegister = getInstruction<FiveRegisterInstruction>(index).registerD
+
+                addInstructions(
+                    index,
+                    """
+                        invoke-static { v$visibilityRegister }, $EXTENSION_CLASS->hideCastButton(Z)Z
+                        move-result v$visibilityRegister
+                    """
+                )
             }
         }
 

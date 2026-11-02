@@ -30,8 +30,6 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -73,7 +71,9 @@ val shortsAutoplayPatch = bytecodePatch(
             )
         }
         
-        ReelPlaybackRepeatFingerprint.method.apply {
+        val reelPlaybackRepeat = reelPlaybackRepeatFingerprint(reelEnumClass)
+
+        reelPlaybackRepeat.method.apply {
             // The behavior enums are looked up from an ordinal value to an enum type.
             findInstructionIndicesReversedOrThrow(
                 if (is_21_25_or_greater) {
@@ -112,11 +112,11 @@ val shortsAutoplayPatch = bytecodePatch(
         // Manually restore the removed 'Autoplay' code.
         // Variable names are only a rough guess of what these methods do.
         val userActionMethodReference = ReelPlaybackLegacyFingerprint.instructionMatches[1]
-            .getInstruction<ReferenceInstruction>().reference as MethodReference
+            .methodReference
         val reelSequenceControllerMethodReference = ReelPlaybackLegacyFingerprint.instructionMatches[2]
-            .getInstruction<ReferenceInstruction>().reference as MethodReference
+            .methodReference
 
-        ReelPlaybackRepeatFingerprint.method.apply {
+        reelPlaybackRepeat.method.apply {
             // Find the first call modified by extension code above.
             val extensionReturnResultIndex = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.INVOKE_STATIC &&
@@ -125,8 +125,8 @@ val shortsAutoplayPatch = bytecodePatch(
             val enumRegister = getInstruction<OneRegisterInstruction>(extensionReturnResultIndex).registerA
             val getReelSequenceControllerReference = getInstanceFieldGetFingerprint(
                 reelSequenceControllerMethodReference.definingClass
-            ).match(ReelPlaybackRepeatFingerprint.originalMethod)
-                .instructionMatches.first().instruction.getReference<FieldReference>()!!
+            ).match(reelPlaybackRepeat.originalMethod)
+                .instructionMatches.first().fieldReference
 
             // Add a helper method to avoid finding multiple free registers.
             // If enum is autoplay then method performs autoplay and returns null,
@@ -163,7 +163,7 @@ val shortsAutoplayPatch = bytecodePatch(
                     """
                 )
             }
-            ReelPlaybackRepeatFingerprint.classDef.methods.add(helperMethod)
+            reelPlaybackRepeat.classDef.methods.add(helperMethod)
 
             addInstructionsWithLabels(
                 extensionReturnResultIndex + 1,

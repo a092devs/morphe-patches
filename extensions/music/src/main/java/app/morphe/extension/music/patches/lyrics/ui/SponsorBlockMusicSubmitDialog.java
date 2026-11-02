@@ -195,7 +195,8 @@ final class SponsorBlockMusicSubmitDialog {
                     Utils.runOnBackgroundThread(() -> submitSegment(
                             videoId, category, start, end, videoLength, manager));
                 },
-                () -> { },
+                () -> {
+                },
                 str("morphe_sb_settings_copy"),
                 () -> copySpan(context, videoId, times),
                 false);
@@ -380,13 +381,13 @@ final class SponsorBlockMusicSubmitDialog {
                     ThemeUtils.getCancelOrNeutralButtonBackgroundColor()));
         }
 
+        private static int clamp(int ms) {
+            return Math.max(-RANGE_MS, Math.min(RANGE_MS, ms));
+        }
+
         void setValue(int ms) {
             offsetMs = clamp(ms);
             invalidate();
-        }
-
-        private static int clamp(int ms) {
-            return Math.max(-RANGE_MS, Math.min(RANGE_MS, ms));
         }
 
         private void apply(int ms) {

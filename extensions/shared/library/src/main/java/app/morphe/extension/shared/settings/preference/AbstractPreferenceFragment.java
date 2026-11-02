@@ -62,6 +62,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -75,7 +77,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Scanner;
 import java.util.function.Consumer;
 
 import app.morphe.extension.shared.Logger;
@@ -271,6 +272,12 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
     private static boolean showingUserDialogMessage;
 
     /**
+     * If a changed setting requires an app restart. The restart dialog is shown when the
+     * settings are closed, so multiple settings can be changed with only one restart.
+     */
+    private static boolean restartNeeded;
+
+    /**
      * Confirm and restart dialog button text and title.
      * Set by subclasses if Strings cannot be added as a resource.
      */
@@ -281,12 +288,21 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
     private int currentUiMode = -1;
     private static final int WRITE_TEXT_REQUEST_CODE = 45;
     private static final int READ_TEXT_REQUEST_CODE = 46;
+    private static final int PICK_FOLDER_REQUEST_CODE = 47;
+
+    /**
+     * Any file can be picked for import, and a larger file is rejected instead of running out of memory.
+     * The largest valid import is a series backup of 8 million characters, of at most 3 bytes each.
+     */
+    private static final int MAX_IMPORT_TEXT_BYTES = 24 * 1024 * 1024;
+    private static final int IMPORT_BUFFER_BYTES = 8 * 1024;
 
     private String existingSettings = "";
 
     private Collection<String> pendingLinesToExport = null;
     private Consumer<Boolean> pendingTextExportResult = null;
     private Consumer<String> pendingTextImportResult = null;
+    private Consumer<Uri> pendingFolderResult = null;
 
     private EditText currentImportExportEditText;
     private Dialog currentImportExportDialog = null;
@@ -317,7 +333,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                             showSettingUserDialogConfirmation(pref, setting);
                             return;
                         } else if (setting.rebootApp) {
-                            showRestartDialog(getContext());
+                            setRestartNeeded();
                         }
                     }
 
@@ -400,7 +416,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                     updateUIAvailability();
 
                     if (setting.rebootApp) {
-                        showRestartDialog(context);
+                        setRestartNeeded();
                     }
                 },
                 () -> {
@@ -555,6 +571,34 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         }
     }
 
+    /**
+     * Marks that a changed setting requires an app restart.
+     * The restart dialog is shown when the settings are closed.
+     */
+    public static void setRestartNeeded() {
+        restartNeeded = true;
+    }
+
+    /**
+     * Shows the restart dialog if a changed setting requires an app restart.
+     * Must be called when the user closes the settings.
+     *
+     * @return If the dialog is shown, and the settings must not close yet.
+     */
+    public static boolean showRestartDialogIfNeeded(Context context) {
+        if (!restartNeeded) {
+            return false;
+        }
+        restartNeeded = false;
+
+        showRestartDialog(context);
+        return true;
+    }
+
+    /**
+     * Shows a dialog that restarts the app when it is closed in any way,
+     * including the back button.
+     */
     public static void showRestartDialog(Context context) {
         Utils.verifyOnMainThread();
         if (restartDialogTitle == null) {
@@ -573,15 +617,16 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                 restartDialogMessage,            // Message.
                 null,                            // No EditText.
                 restartDialogButtonText,         // OK button text.
-                () -> Utils.restartApp(context), // OK button action.
-                () -> {},                        // Cancel button action (dismiss only).
+                () -> {},                        // OK button action (dismiss restarts).
+                null,                            // No Cancel button.
                 null,                            // No Neutral button text.
                 null,                            // No Neutral button action.
                 true                             // Dismiss dialog when onNeutralClick.
         );
 
-        // Show the dialog.
-        dialogPair.first.show();
+        Dialog dialog = dialogPair.first;
+        dialog.setOnDismissListener(d -> Utils.restartApp(context));
+        dialog.show();
     }
 
     /**
@@ -611,7 +656,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                     // OK button text.
                     str("morphe_settings_save"),
                     // OK button action.
-                    () -> importSettingsText(context, currentImportExportEditText.getText().toString()),
+                    () -> importSettingsText(currentImportExportEditText.getText().toString()),
                     // Cancel button action (dismiss only).
                     () -> {},
                     // Neutral button (Copy) text.
@@ -708,7 +753,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                 showLocalizedToast("morphe_settings_import_file_success",
                         "Settings imported successfully, tap Save to apply");
             } else {
-                importSettingsText(getContext(), text);
+                importSettingsText(text);
             }
         });
     }
@@ -768,6 +813,22 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         }
     }
 
+    /**
+     * Opens the folder picker, for preferences that save files to a folder.
+     *
+     * @param onResult Called with the tree uri of the folder. Not called if the user picks no folder.
+     */
+    public void pickFolderActivity(Consumer<Uri> onResult) {
+        try {
+            pendingFolderResult = onResult;
+
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+            startActivityForResult(intent, PICK_FOLDER_REQUEST_CODE);
+        } catch (Exception ex) {
+            Logger.printException(() -> "pickFolderActivity failure", ex);
+        }
+    }
+
     private void saveTextToUri(Uri uri) {
         if (pendingTextExportResult == null || pendingLinesToExport == null) return;
 
@@ -797,15 +858,13 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         pendingTextExportResult = null;
     }
 
-    @SuppressWarnings("CharsetObjectCanBeUsed")
     private void readTextFromUri(Uri uri) {
         if (pendingTextImportResult == null) return;
 
         String text = null;
         try (InputStream in = getContext().getContentResolver().openInputStream(uri)) {
             if (in != null) {
-                Scanner scanner = new Scanner(in, StandardCharsets.UTF_8.name()).useDelimiter("\\A");
-                text = scanner.hasNext() ? scanner.next() : "";
+                text = readImportText(in);
             }
         } catch (Exception ex) {
             Logger.printException(() -> "readTextFromUri failure", ex);
@@ -813,6 +872,26 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
 
         pendingTextImportResult.accept(text);
         pendingTextImportResult = null;
+    }
+
+    /**
+     * @return The text of the stream, or null if it is larger than {@link #MAX_IMPORT_TEXT_BYTES}.
+     */
+    @Nullable
+    @SuppressWarnings("CharsetObjectCanBeUsed")
+    private static String readImportText(InputStream in) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        byte[] buffer = new byte[IMPORT_BUFFER_BYTES];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            if (bytes.size() + read > MAX_IMPORT_TEXT_BYTES) {
+                Logger.printInfo(() -> "Import file is too large");
+                return null;
+            }
+            bytes.write(buffer, 0, read);
+        }
+
+        return bytes.toString(StandardCharsets.UTF_8.name());
     }
 
     private void exportToClipboard(String logsToExport) {
@@ -1068,6 +1147,9 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             saveTextToUri(data.getData());
         } else if (requestCode == READ_TEXT_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
             readTextFromUri(data.getData());
+        } else if (requestCode == PICK_FOLDER_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null
+                && data.getData() != null && pendingFolderResult != null) {
+            pendingFolderResult.accept(data.getData());
         }
     }
 
@@ -1079,7 +1161,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         }
     }
 
-    private void importSettingsText(Context context, String replacementSettings) {
+    private void importSettingsText(String replacementSettings) {
         try {
             existingSettings = Setting.exportToJson(null);
             if (replacementSettings.equals(existingSettings)) {
@@ -1088,7 +1170,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             settingImportInProgress = true;
             final boolean rebootNeeded = Setting.importFromJSON(getActivity(), replacementSettings);
             if (rebootNeeded) {
-                showRestartDialog(context);
+                setRestartNeeded();
             }
         } catch (Exception ex) {
             Logger.printException(() -> "importSettingsText failure", ex);
@@ -1117,7 +1199,11 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                     if (activity != null) {
                         Intent intent = activity.getIntent();
                         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                        // Activity is recreated and not closed, so do not show the restart dialog yet.
+                        final boolean restartWasNeeded = restartNeeded;
+                        restartNeeded = false;
                         activity.finish();
+                        restartNeeded = restartWasNeeded;
                         activity.overridePendingTransition(0, 0);
                         startActivity(intent);
                         activity.overridePendingTransition(0, 0);

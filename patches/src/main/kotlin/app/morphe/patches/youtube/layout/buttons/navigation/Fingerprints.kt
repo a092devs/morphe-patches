@@ -47,24 +47,6 @@ internal object CreatePivotBarFingerprint : Fingerprint(
     )
 )
 
-internal object CastMenuItemInitializeFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
-    returnType = "V",
-    filters = listOf(
-        resourceLiteral(ResourceType.LAYOUT, "castmediaroutebutton"),
-        methodCall(name = "setShowAsAction")
-    )
-)
-
-internal object CastMenuItemVisibilityFingerprint : Fingerprint(
-    classFingerprint = CastMenuItemInitializeFingerprint,
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
-    returnType = "V",
-    filters = listOf(
-        methodCall(name = "setVisible")
-    )
-)
-
 internal object AnimatedNavigationTabsFeatureFlagFingerprint : Fingerprint(
     filters = listOf(
         literal(45680008L)
@@ -84,28 +66,24 @@ internal object AutoHideNavigationBarOnFeedScrollingFingerprint : Fingerprint(
     )
 )
 
+/**
+ * Moves the navigation bar out of the screen while the miniplayer is dragged to be dismissed.
+ * Other listeners of the same drag cancel autoplay, so only the navigation bar listener is hooked.
+ * Before 21.23 the method of the navigation bar for this drag is empty.
+ */
 internal object AutoHideNavigationBarOnDismissMiniplayerFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PRIVATE, AccessFlags.FINAL),
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "V",
     parameters = listOf("F"),
     filters = listOf(
-        literal(2),
-        methodCall(
-            smali = "Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;",
-            location = MatchAfterWithin(5)
-        ),
-        methodCall(
-            smali = "Ljava/util/Set;->iterator()Ljava/util/Iterator;",
-            location = MatchAfterWithin(5)
-        ),
-        methodCall(
-            smali = "Ljava/util/Iterator;->hasNext()Z",
-            location = MatchAfterWithin(5)
-        ),
-        methodCall(
-            smali = "Ljava/util/Iterator;->next()Ljava/lang/Object;",
-            location = MatchAfterWithin(5)
-        )
+        opcode(Opcode.IGET),
+        opcode(Opcode.IGET, location = MatchAfterImmediately()),
+        opcode(Opcode.ADD_INT_2ADDR, location = MatchAfterImmediately()),
+        opcode(Opcode.INT_TO_FLOAT, location = MatchAfterImmediately()),
+        opcode(Opcode.MUL_FLOAT_2ADDR, location = MatchAfterImmediately()),
+        opcode(Opcode.IPUT, location = MatchAfterImmediately()),
+        opcode(Opcode.INVOKE_VIRTUAL, location = MatchAfterImmediately()),
+        opcode(Opcode.RETURN_VOID, location = MatchAfterImmediately())
     )
 )
 
@@ -142,17 +120,6 @@ internal object CommentReplyPaddingFeatureFlagFingerprint : Fingerprint(
 )
 
 /**
- * Changes how the height of the navigation bar and the miniplayer is given to the pages,
- * which leaves wrong padding in some pages, such as the incognito search.
- * 21.29 and older read it with a single accessor method.
- */
-internal object IncognitoSearchPaddingFeatureFlagFingerprint : Fingerprint(
-    filters = listOf(
-        literal(45724388L)
-    )
-)
-
-/**
  * Feature flags of the translucent navigation bar. 21.29 and older read each of them with a single
  * accessor method, newer targets read them inline in many classes, sometimes more than once in
  * the same method.
@@ -160,14 +127,20 @@ internal object IncognitoSearchPaddingFeatureFlagFingerprint : Fingerprint(
 internal val TRANSLUCENT_NAVIGATION_BAR_FEATURE_FLAGS = listOf(
     45630927L, // Blurred, translucent background of the navigation bar.
     NAVIGATION_BAR_COVERS_SYSTEM_BUTTONS_FLAG,
-    45631257L  // Feed laid out behind the navigation bar instead of above it.
+    FEED_BEHIND_NAVIGATION_BAR_FLAG
 )
 
 /**
- * Navigation bar also covers the system navigation buttons, the only one of
- * [TRANSLUCENT_NAVIGATION_BAR_FEATURE_FLAGS] that changes the room left for them.
+ * Navigation bar also covers the system navigation buttons, which adds the room for them
+ * to the navigation bar height.
  */
 internal const val NAVIGATION_BAR_COVERS_SYSTEM_BUTTONS_FLAG = 45632194L
+
+/**
+ * Feed laid out behind the navigation bar instead of above it. The page then ends at the bottom
+ * of the screen, and its list gets the navigation bar height as bottom padding.
+ */
+internal const val FEED_BEHIND_NAVIGATION_BAR_FLAG = 45631257L
 
 internal object TranslucentNavigationBarFeatureFlagsFingerprint : Fingerprint(
     filters = listOf(
@@ -199,74 +172,6 @@ internal object NavigationBarBottomPaddingFingerprint : Fingerprint(
             definingClass = PIVOT_BAR_CLASS,
             name = "setPadding",
             location = MatchAfterWithin(10)
-        )
-    )
-)
-
-/**
- * Sets the bottom margin of the layout that holds the page and the navigation bar.
- * With the keyboard open and a text field focused, the margin is the keyboard height,
- * otherwise the bottom of the window insets.
- */
-internal object PageBottomMarginFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = listOf("Landroid/graphics/Rect;"),
-    filters = listOf(
-        methodCall(smali = "Landroid/view/View;->findFocus()Landroid/view/View;"),
-        methodCall(
-            smali = "Landroid/view/View;->onCheckIsTextEditor()Z",
-            location = MatchAfterWithin(5)
-        ),
-        fieldAccess(
-            opcode = Opcode.IGET,
-            definingClass = "Landroid/graphics/Rect;",
-            name = "bottom"
-        )
-    )
-)
-
-/**
- * Sets the padding of a feed list. When the feed is laid out behind the navigation bar,
- * the bottom padding holds the navigation bar height and the bottom window inset.
- */
-internal object FeedListPaddingFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = listOf(),
-    filters = listOf(
-        methodCall(
-            definingClass = "Landroid/support/v7/widget/RecyclerView;",
-            name = "setClipToPadding"
-        ),
-        methodCall(
-            definingClass = "Landroid/support/v7/widget/RecyclerView;",
-            name = "setPadding",
-            location = MatchAfterImmediately()
-        )
-    )
-)
-
-/**
- * Sets the bottom padding of the list of a browse page laid out behind the navigation bar,
- * to the navigation bar height plus the bottom window inset, once the window insets are known.
- */
-internal object BrowseListBottomPaddingFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = listOf("Ljava/lang/Object;"),
-    filters = listOf(
-        methodCall(
-            definingClass = "Landroid/support/v7/widget/RecyclerView;",
-            name = "getPaddingRight"
-        ),
-        fieldAccess(
-            opcode = Opcode.IGET,
-            definingClass = "Landroid/graphics/Rect;",
-            name = "bottom",
-            location = MatchAfterWithin(6)
-        ),
-        methodCall(
-            definingClass = "Landroid/support/v7/widget/RecyclerView;",
-            name = "setPadding",
-            location = MatchAfterWithin(3)
         )
     )
 )
@@ -404,7 +309,8 @@ internal object PivotBarRendererListFingerprint : Fingerprint(
             definingClass = "this",
             type = "L"
         ),
-        literal(45633821L),
+        // The new list is compared to the previous list.
+        methodCall(smali = "Ljava/lang/Class;->isInstance(Ljava/lang/Object;)Z")
     )
 )
 
