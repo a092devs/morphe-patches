@@ -477,6 +477,11 @@ Reports are public and are reviewed before a channel is added to a list. Removal
     <string name="morphe_copy_comments_title">Copy comments</string>
     <string name="morphe_copy_comments_summary">Tap and hold a comment to copy it</string>
     <string name="morphe_copy_comments_success">Comment copied to clipboard</string>
+    <string name="morphe_copy_select_text_title">Select text of descriptions and posts</string>
+    <string name="morphe_copy_select_text_summary">Tap and hold a video description or a post to select and copy any part of it</string>
+    <string name="morphe_copy_select_text_dialog_title">Select text</string>
+    <string name="morphe_copy_select_text_copy_all">Copy all</string>
+    <string name="morphe_copy_select_text_success">Text copied to clipboard</string>
 
     <!-- interaction.feedactions.feedVideoActionsPatch -->
     <string name="morphe_feed_long_press_menu_title">Tap and hold to open video menu</string>
@@ -1043,6 +1048,10 @@ To access Settings, enable the Settings button via General → Toolbar → Show 
     <string name="morphe_navigation_bar_style_entry_3">Transparent</string>
     <string name="morphe_navigation_bar_style_entry_4">Opaque</string>
     <string name="morphe_navigation_bar_style_user_dialog_message">This style may not be supported by your device or YouTube version, and can cause layout issues or crashes</string>
+    <string name="morphe_navigation_bar_glass_title">Enable glass navigation bar</string>
+    <string name="morphe_navigation_bar_glass_summary">Shows the navigation bar as a floating, rounded, translucent capsule. Not available with the Opaque navigation bar style</string>
+    <string name="morphe_navigation_bar_glass_opacity_title">Glass opacity</string>
+    <string name="morphe_navigation_bar_glass_opacity_summary">Adjust the transparency level of the glass navigation bar (0 is transparent, 100 is opaque)</string>
 
     <string name="morphe_toolbar_screen_title">Toolbar</string>
     <string name="morphe_toolbar_screen_summary">Choose which components appear in the toolbar</string>
@@ -1888,6 +1897,12 @@ Automatic recording is optional. It stops in incognito or when the account chang
     <string name="morphe_niconico_comments_max_length_title">Max comment length</string>
     <string name="morphe_niconico_comments_max_length_summary">Hides comments with more characters than this. Each emoji counts as one character</string>
     <string name="morphe_niconico_comments_max_length_no_limit">No limit</string>
+    <string name="morphe_niconico_comments_live_streams_title">Show on live streams</string>
+    <string name="morphe_niconico_comments_live_streams_summary">Live streams and their replays</string>
+    <string name="morphe_niconico_comments_live_premieres_title">Show on premieres</string>
+    <string name="morphe_niconico_comments_live_premieres_summary">Premieres while they are playing</string>
+    <string name="morphe_niconico_comments_ended_premieres_title">Show on ended premieres</string>
+    <string name="morphe_niconico_comments_ended_premieres_summary">Chat replay of premieres that have ended</string>
 
     <string name="morphe_live_chat_translate_screen_title">Live chat translation</string>
     <string name="morphe_live_chat_translate_screen_summary">Translate live chat and live chat replay messages</string>
@@ -1896,6 +1911,11 @@ Automatic recording is optional. It stops in incognito or when the account chang
     <string name="morphe_live_chat_translate_language_title">Translation language</string>
     <string name="morphe_live_chat_translate_exclude_title">Excluded languages</string>
     <string name="morphe_live_chat_translate_exclude_summary">Comma separated language codes such as id,en. Messages in these languages are not translated</string>
+    <string name="morphe_live_chat_translate_provider_title">Translation provider</string>
+    <string name="morphe_live_chat_translate_provider_google">Google Translate</string>
+    <string name="morphe_live_chat_translate_provider_deepl">DeepL</string>
+    <string name="morphe_live_chat_translate_deepl_api_key_title">DeepL API key</string>
+    <string name="morphe_live_chat_translate_deepl_api_key_summary">Your DeepL API key. Google Translate is used if DeepL fails, such as when the monthly limit of the key is reached</string>
     <string name="morphe_live_chat_translate_copy_button_title">Show copy message button</string>
     <string name="morphe_live_chat_translate_copy_button_summary">Adds a small copy button to every chat message</string>
     <string name="morphe_live_chat_translate_copied">Message copied to clipboard</string>

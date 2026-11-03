@@ -28,8 +28,8 @@ import app.morphe.extension.youtube.settings.Settings;
 
 /**
  * Shows the messages of {@link Utils#showSnackbar} in the YouTube snackbar, by running the same
- * command a server response uses to show one. At most one message is shown each second:
- * a message is shown at once if it is its turn, or else it waits for its turn.
+ * command a server response uses to show one. At most one message is shown every
+ * {@link #MESSAGE_INTERVAL_MS}: a message is shown at once if it is its turn, or else it waits for its turn.
  */
 @SuppressWarnings("unused")
 public final class NativeSnackbarPatch {
@@ -109,24 +109,31 @@ public final class NativeSnackbarPatch {
      * which already keep it above the system navigation buttons, so the snackbars are shown that much
      * above them (<a href="https://github.com/MorpheApp/morphe-patches/issues/4308">...</a>).
      * Only the part of the padding the container really needs, where it overlaps the inset, is kept.
+     * <p>
+     * The glass navigation bar is taller than the height YouTube gives it, which the container
+     * ends above, so the snackbars are moved up by the difference.
      */
     public static void removeExtraBottomRoom(FrameLayout container) {
         try {
+            int offset = 0;
+
             final int paddingBottom = container.getPaddingBottom();
-            if (paddingBottom <= 0) {
+            if (paddingBottom > 0) {
+                container.getLocationInWindow(containerLocation);
+                final int roomBelow = container.getRootView().getHeight()
+                        - containerLocation[1] - container.getHeight();
+                offset = Math.max(0, Math.min(paddingBottom, roomBelow));
+            }
+
+            offset -= GlassNavigationBar.getAddedRoomOnScreen();
+            if (offset == 0) {
                 return;
             }
 
-            container.getLocationInWindow(containerLocation);
-            final int roomBelow = container.getRootView().getHeight()
-                    - containerLocation[1] - container.getHeight();
-            final int offset = Math.min(paddingBottom, roomBelow);
-            if (offset <= 0) {
-                return;
+            if (offset > 0) {
+                // The moved snackbars are drawn over the padding.
+                container.setClipToPadding(false);
             }
-
-            // The moved snackbars are drawn over the padding.
-            container.setClipToPadding(false);
             for (int i = 0, count = container.getChildCount(); i < count; i++) {
                 View child = container.getChildAt(i);
                 if (child.getLayoutParams() instanceof FrameLayout.LayoutParams params
