@@ -72,33 +72,8 @@ public final class NewSettingsIndicator {
      * Must be called after all preferences are added to and removed from the screen.
      */
     public static void markNewPreferences(PreferenceScreen screen) {
-        try {
-            Set<String> currentIds = new HashSet<>();
-            collectIds(screen, currentIds);
-
-            Map<String, Long> firstSeenTimes = updateFirstSeenTimes(currentIds);
-
-            final int days = SeekBarPreference.clampToRange(SharedYouTubeSettings.SETTINGS_NEW_INDICATOR_DAYS);
-            if (days == 0 || firstSeenTimes.isEmpty()) {
-                return;
-            }
-
-            final long newAfter = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days);
-            Set<String> newIds = new HashSet<>();
-            for (Map.Entry<String, Long> entry : firstSeenTimes.entrySet()) {
-                if (entry.getValue() > newAfter) {
-                    newIds.add(entry.getKey());
-                }
-            }
-            if (newIds.isEmpty()) {
-                return;
-            }
-
-            Logger.printDebug(() -> "New settings: " + newIds);
-            markGroup(screen, newIds);
-        } catch (Exception ex) {
-            Logger.printException(() -> "markNewPreferences failure", ex);
-        }
+        // Disabled per user request - no new settings indicator dot
+        return;
     }
 
     private static void collectIds(PreferenceGroup group, Set<String> ids) {
