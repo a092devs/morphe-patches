@@ -231,7 +231,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             Preference p = group.getPreference(i);
             // NoTitlePreferenceCategory reports its first child title so it can be sorted,
             // but that title is never shown to the user and must not appear in the path.
-            CharSequence title = (p instanceof NoTitlePreferenceCategory) ? null : p.getTitle();
+            CharSequence title = (p instanceof NoTitlePreferenceCategory) ? null : NewIndicatorSpan.removeFrom(p.getTitle());
             if (p == target) {
                 if (title != null) path.add(title);
                 return true;
@@ -1295,7 +1295,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                             }
                         }
                     }
-                    sortValue = Utils.removePunctuationToLowercase(title);
+                    sortValue = Utils.removePunctuationToLowercase(NewIndicatorSpan.removeFrom(title));
                     break;
                 case BY_KEY:
                     String key = preference.getKey();
