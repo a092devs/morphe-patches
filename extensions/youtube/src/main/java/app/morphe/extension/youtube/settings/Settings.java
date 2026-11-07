@@ -812,6 +812,8 @@ public class Settings extends SharedYouTubeSettings {
     public static final BooleanSetting NICONICO_COMMENTS_LIVE_STREAMS = new BooleanSetting("morphe_niconico_comments_live_streams", TRUE, parent(NICONICO_COMMENTS));
     public static final BooleanSetting NICONICO_COMMENTS_LIVE_PREMIERES = new BooleanSetting("morphe_niconico_comments_live_premieres", TRUE, parent(NICONICO_COMMENTS));
     public static final BooleanSetting NICONICO_COMMENTS_ENDED_PREMIERES = new BooleanSetting("morphe_niconico_comments_ended_premieres", TRUE, parent(NICONICO_COMMENTS));
+    public static final BooleanSetting NICONICO_COMMENTS_TIMED_COMMENTS = new BooleanSetting("morphe_niconico_comments_timed_comments", TRUE, parent(NICONICO_COMMENTS));
+    public static final BooleanSetting NICONICO_COMMENTS_TIMED_COMMENTS_WITH_REPLAY = new BooleanSetting("morphe_niconico_comments_timed_comments_with_replay", FALSE, parentsAll(NICONICO_COMMENTS, NICONICO_COMMENTS_TIMED_COMMENTS));
 
     // Voice over translation
     public static final BooleanSetting VOT_ENABLED = new BooleanSetting("morphe_vot_enabled", FALSE, true);
@@ -985,6 +987,7 @@ public class Settings extends SharedYouTubeSettings {
     private static final StringSetting  DEPRECATED_SB_CATEGORY_UNSUBMITTED = new StringSetting("sb_unsubmitted", SKIP_AUTOMATICALLY.morpheKeyValue, false, false);
     private static final StringSetting  DEPRECATED_SB_CATEGORY_UNSUBMITTED_COLOR = new StringSetting("sb_unsubmitted_color", "#FFFFFFFF", false, false);
     private static final BooleanSetting DEPRECATED_LOCAL_QUEUE = new BooleanSetting("morphe_local_queue", FALSE);
+    private static final BooleanSetting DEPRECATED_QUEUE_OVERRIDE_FLYOUT_MENU = new BooleanSetting("morphe_queue_override_flyout_menu", TRUE);
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_STATUS_BAR = new BooleanSetting("morphe_disable_translucent_status_bar", FALSE);
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_NAVIGATION_BAR_LIGHT = new BooleanSetting("morphe_disable_translucent_navigation_bar_light", FALSE);
     private static final BooleanSetting DEPRECATED_DISABLE_TRANSLUCENT_NAVIGATION_BAR_DARK = new BooleanSetting("morphe_disable_translucent_navigation_bar_dark", FALSE);
@@ -1123,6 +1126,15 @@ public class Settings extends SharedYouTubeSettings {
         if (DEPRECATED_LOCAL_QUEUE.get()) {
             QUEUE_TYPE.save(QueueType.LOCAL);
             DEPRECATED_LOCAL_QUEUE.resetToDefault();
+        }
+
+        // "Override feed flyout queue button" was a switch of the Morphe queue. Turned off,
+        // the stock queue buttons kept YouTube's queue, which is now the Default queue type.
+        if (!DEPRECATED_QUEUE_OVERRIDE_FLYOUT_MENU.get()) {
+            if (QUEUE_TYPE.get() == QueueType.MORPHE) {
+                QUEUE_TYPE.save(QueueType.DEFAULT);
+            }
+            DEPRECATED_QUEUE_OVERRIDE_FLYOUT_MENU.resetToDefault();
         }
 
         // The positions of the Search, Watch later and Settings buttons were indexes in the list of

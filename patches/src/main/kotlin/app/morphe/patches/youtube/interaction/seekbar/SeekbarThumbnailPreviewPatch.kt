@@ -10,7 +10,8 @@ package app.morphe.patches.youtube.interaction.seekbar
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.util.findFreeRegister
 import app.morphe.patches.shared.misc.settings.preference.SwitchPreference
 import app.morphe.patches.youtube.misc.chapters.chaptersHookPatch
 import app.morphe.patches.youtube.misc.extension.sharedExtensionPatch
@@ -22,14 +23,16 @@ import app.morphe.patches.youtube.misc.settings.settingsPatch
 import app.morphe.patches.youtube.shared.Constants.COMPATIBILITY_YOUTUBE
 import app.morphe.patches.youtube.shared.SeekbarOnDrawFingerprint
 import app.morphe.patcher.util.getReference
+import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import app.morphe.util.insertLiteralOverride
+import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val EXTENSION_CLASS = "Lapp/morphe/extension/youtube/patches/SeekbarThumbnailPreviewPatch;"
 
-val seekbarThumbnailPreviewPatch = bytecodePatch(
+val seekbarThumbnailPreviewPatch = patch(
     description = "Adds an option to restore the seekbar thumbnail preview."
 ) {
     dependsOn(
@@ -108,6 +111,30 @@ val seekbarThumbnailPreviewPatch = bytecodePatch(
                 nop
             """
         )
+
+        // The full screen seek preview fits in the player, also when the video is zoomed to fill the screen.
+        // Scale it to the video when it is shown.
+        SeekbarBigBoardsScrubFingerprint.let {
+            val previewField = it.classDef.fields.single { field ->
+                field.type == "Landroid/widget/ImageView;"
+            }
+            val seekMethod = it.instructionMatches.first().getInstruction<ReferenceInstruction>().reference
+
+            it.method.apply {
+                val index = indexOfFirstInstructionReversedOrThrow {
+                    opcode == Opcode.INVOKE_DIRECT && getReference<MethodReference>() == seekMethod
+                }
+                val register = findFreeRegister(index)
+
+                addInstructions(
+                    index,
+                    """
+                        iget-object v$register, p0, $previewField
+                        invoke-static { v$register }, $EXTENSION_CLASS->setBigBoardScale(Landroid/widget/ImageView;)V
+                    """
+                )
+            }
+        }
 
         PreciseSeekingRecyclerViewFingerprint.method.addInstruction(
             0,

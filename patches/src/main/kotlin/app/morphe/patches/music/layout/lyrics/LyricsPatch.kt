@@ -9,20 +9,19 @@
 package app.morphe.patches.music.layout.lyrics
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.fieldAccess
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patches.all.misc.resources.addResourcesPatch
 import app.morphe.patches.music.misc.extension.sharedExtensionPatch
 import app.morphe.patches.music.misc.litho.filter.lithoFilterPatch
+import app.morphe.patches.music.misc.mediasession.addSetMetadataHook
+import app.morphe.patches.music.misc.mediasession.addSetMetadataWithSessionHook
+import app.morphe.patches.music.misc.mediasession.addSetPlaybackStateHook
+import app.morphe.patches.music.misc.mediasession.mediaSessionHookPatch
 import app.morphe.patches.music.misc.settings.PreferenceScreen
 import app.morphe.patches.music.misc.settings.settingsPatch
 import app.morphe.patches.music.shared.Constants.COMPATIBILITY_YOUTUBE_MUSIC
-import app.morphe.patches.music.shared.hookMediaSessionArgument
 import app.morphe.patches.music.video.information.musicVideoInformationPatch
-import app.morphe.patches.shared.MediaSessionSetMetadataFingerprint
-import app.morphe.patches.shared.MediaSessionSetPlaybackStateFingerprint
 import app.morphe.patches.shared.misc.litho.filter.addLithoFilter
 import app.morphe.patches.shared.misc.settings.preference.InputType
 import app.morphe.patches.shared.misc.settings.preference.ListPreference
@@ -37,7 +36,6 @@ import app.morphe.util.copyResources
 import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import java.util.logging.Logger
 
 private const val EXTENSION_CLASS = "Lapp/morphe/extension/music/patches/lyrics/LyricsPatch;"
@@ -49,7 +47,7 @@ private const val LYRICS_PANEL_FILTER =
     "Lapp/morphe/extension/music/patches/components/LyricsPanelFilter;"
 
 @Suppress("unused")
-val lyricsPatch = bytecodePatch(
+val lyricsPatch = patch(
     name = "Third-party lyrics",
     description = "Adds an option to show synced lyrics with experience enhancement from 19+ providers in the lyrics panel."
 ) {
@@ -58,10 +56,11 @@ val lyricsPatch = bytecodePatch(
         settingsPatch,
         addResourcesPatch,
         lithoFilterPatch,
+        mediaSessionHookPatch,
         musicVideoInformationPatch,
-        // The copy, romanize and furigana buttons need their icons whether the patches
+        // The copy and romanize buttons need their icons whether the patches
         // that own these resources are applied.
-        resourcePatch {
+        patch {
             execute {
                 copyResources(
                     "copyvideolinkbutton",
@@ -69,7 +68,7 @@ val lyricsPatch = bytecodePatch(
                 )
                 copyResources(
                     "romanisationbutton",
-                    ResourceGroup("drawable", "morphe_yt_romanize.xml", "morphe_yt_ruby.xml")
+                    ResourceGroup("drawable", "morphe_yt_romanize.xml")
                 )
             }
         }
@@ -130,14 +129,6 @@ val lyricsPatch = bytecodePatch(
                     ),
                     SwitchPreference("morphe_music_lyrics_allow_transliteration", summary = true),
                     NonInteractivePreference(
-                        key = "morphe_music_lyrics_ruby_provider",
-                        summaryKey = null,
-                        tag = "app.morphe.extension.music.settings.preference.LyricsOrderedListPreference",
-                        selectable = false,
-                        dependency = "morphe_music_lyrics_enabled"
-                    ),
-                    ListPreference("morphe_music_lyrics_ruby_style"),
-                    NonInteractivePreference(
                         key = "morphe_music_lyrics_clear_cache",
                         tag = "app.morphe.extension.music.settings.preference.LyricsClearCachePreference",
                         dependency = "morphe_music_lyrics_enabled"
@@ -169,6 +160,7 @@ val lyricsPatch = bytecodePatch(
                     SwitchPreference("morphe_music_lyrics_hide_info", summary = true),
                     SwitchPreference("morphe_music_lyrics_force_capitalize", summary = true),
                     SwitchPreference("morphe_music_lyrics_strip_trailing_punctuation", summary = true),
+                    SwitchPreference("morphe_music_lyrics_han_form", summary = true),
                     SwitchPreference("morphe_music_lyrics_swap_trans_roma", summary = true),
                     SwitchPreference("morphe_music_lyrics_force_center", summary = true)
                 )
@@ -184,8 +176,7 @@ val lyricsPatch = bytecodePatch(
                     SwitchPreference("morphe_music_lyrics_show_copy_button", summary = true),
                     SwitchPreference("morphe_music_lyrics_show_refresh_button", summary = true),
                     SwitchPreference("morphe_music_lyrics_show_translate_button", summary = true),
-                    SwitchPreference("morphe_music_lyrics_show_romanize_button", summary = true),
-                    SwitchPreference("morphe_music_lyrics_show_ruby_button", summary = true)
+                    SwitchPreference("morphe_music_lyrics_show_romanize_button", summary = true)
                 )
             ),
             PreferenceCategory(
@@ -257,10 +248,6 @@ val lyricsPatch = bytecodePatch(
                     NonInteractivePreference(
                         key = "morphe_music_lyrics_about",
                         titleKey = null,
-                        // The summary is written by the preference itself, since what the fetched
-                        // reading dictionaries add to it is not known when the layout is built.
-                        summaryKey = null,
-                        tag = "app.morphe.extension.music.settings.preference.LyricsAboutPreference",
                         dependency = "morphe_music_lyrics_enabled"
                     )
                 )
@@ -329,31 +316,13 @@ val lyricsPatch = bytecodePatch(
             )
         }
 
-        MediaSessionSetMetadataFingerprint.hookMediaSessionArgument(
-            "$EXTENSION_CLASS->onSetMetadata(Landroid/media/MediaMetadata;)V"
+        addSetMetadataHook("$EXTENSION_CLASS->onSetMetadata(Landroid/media/MediaMetadata;)V")
+        addSetMetadataWithSessionHook(
+            "$MINIPLAYER_LYRICS_CLASS->onMediaSessionSetMetadata(Landroid/media/session/MediaSession;Landroid/media/MediaMetadata;)V"
         )
-
-        MediaSessionSetMetadataFingerprint.let {
-            it.clearMatch()
-            val method = it.method
-            val index = it.instructionMatches.last().index
-            val instruction = method.getInstruction<FiveRegisterInstruction>(index)
-            val sessionRegister = instruction.registerC
-            val metadataRegister = instruction.registerD
-            method.addInstruction(
-                index,
-                "invoke-static { v$sessionRegister, v$metadataRegister }, " +
-                    "$LOCKSCREEN_CLASS->onMediaSessionSetMetadata(Landroid/media/session/MediaSession;Landroid/media/MediaMetadata;)V"
-            )
-            method.addInstruction(
-                index,
-                "invoke-static { v$sessionRegister, v$metadataRegister }, " +
-                    "$MINIPLAYER_LYRICS_CLASS->onMediaSessionSetMetadata(Landroid/media/session/MediaSession;Landroid/media/MediaMetadata;)V"
-            )
-        }
-
-        MediaSessionSetPlaybackStateFingerprint.hookMediaSessionArgument(
-            "$EXTENSION_CLASS->onSetPlaybackState(Landroid/media/session/PlaybackState;)V"
+        addSetMetadataWithSessionHook(
+            "$LOCKSCREEN_CLASS->onMediaSessionSetMetadata(Landroid/media/session/MediaSession;Landroid/media/MediaMetadata;)V"
         )
+        addSetPlaybackStateHook("$EXTENSION_CLASS->onSetPlaybackState(Landroid/media/session/PlaybackState;)V")
     }
 }

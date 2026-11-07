@@ -166,10 +166,10 @@ public final class GlassNavigationBar {
 
     /**
      * Views of a button that hold its content, the icon and the label. Other views of the button,
-     * such as the badge of the new content count, are left out.
+     * such as the badge of the new content count, are left out. Also used by the preview in the settings.
      */
-    private static final int BUTTON_ICON = ResourceUtils.getIdentifier(ResourceType.ID, "thumbnail_layout");
-    private static final int BUTTON_LABEL = ResourceUtils.getIdentifier(ResourceType.ID, "text");
+    public static final int BUTTON_ICON = ResourceUtils.getIdentifier(ResourceType.ID, "thumbnail_layout");
+    public static final int BUTTON_LABEL = ResourceUtils.getIdentifier(ResourceType.ID, "text");
 
     /**
      * Buttons hidden because they do not fit in the width of the bar, shown again when they fit,
@@ -190,6 +190,17 @@ public final class GlassNavigationBar {
     public static volatile int lastContentWidth;
     public static volatile int lastContentHeight;
     public static volatile int lastBaseHeight;
+    /**
+     * The width the app gives each button at least, such as on tablets, where the app gives the buttons
+     * a minimum width and centers them, instead of sharing the width of the bar between them.
+     */
+    public static volatile int lastMinButtonWidth;
+
+    /**
+     * The buttons of the last bar, also the buttons hidden because they do not fit, so the preview in the settings
+     * shows their icons and labels.
+     */
+    public static volatile List<WeakReference<View>> lastButtons = Collections.emptyList();
 
     /**
      * @return The alpha scaled by the opacity slider, at most fully opaque.
@@ -223,6 +234,11 @@ public final class GlassNavigationBar {
     private static volatile int seenAppRoomPadding;
 
     /**
+     * How far the room the app adds to the height may differ from the bottom padding.
+     */
+    private static final int SEEN_ROOM_TOLERANCE = Dim.dp2;
+
+    /**
      * Some configurations, such as with the layout updates of the app disabled, add the room
      * for the system navigation buttons to the height of the bar another way, so it is not known
      * as the room the app added, and it would be added twice. The bar is then given its full
@@ -236,10 +252,12 @@ public final class GlassNavigationBar {
             seenAppRoomPadding = padding;
         }
 
+        // The app can round the room it adds differently from the padding, such as 109 for a padding of 110.
         final int base = baseHeight;
-        if (base > 0 && padding > 0 && height - base == padding && seenAppRoom != padding) {
-            seenAppRoom = padding;
-            Logger.printDebug(() -> "Glass navigation bar room added by the app: " + padding);
+        final int room = height - base;
+        if (base > 0 && padding > 0 && Math.abs(room - padding) <= SEEN_ROOM_TOLERANCE && seenAppRoom != room) {
+            seenAppRoom = room;
+            Logger.printDebug(() -> "Glass navigation bar room added by the app: " + room + " padding: " + padding);
         }
     }
 
@@ -247,8 +265,11 @@ public final class GlassNavigationBar {
      * @return The room below the buttons the app added to the height of the bar itself.
      */
     private static int getAppRoom(View navigationBar) {
-        final int seenRoom = navigationBar.getPaddingBottom() == seenAppRoomPadding ? seenAppRoom : 0;
-        return Math.max(appRoom, seenRoom);
+        final int padding = navigationBar.getPaddingBottom();
+        final int seenRoom = padding == seenAppRoomPadding ? seenAppRoom : 0;
+        // The stored room can still be the room of a previous bar, such as after switching between
+        // gesture and 3-button navigation, and the app never adds more room than the padding.
+        return Math.max(0, Math.min(Math.max(padding, seenRoom), Math.max(appRoom, seenRoom)));
     }
 
     /**
@@ -430,8 +451,13 @@ public final class GlassNavigationBar {
 
         // The height the app gives the bar, without the room below the buttons.
         ViewGroup.LayoutParams params = pivotBar.getLayoutParams();
-        baseHeight = params != null && params.height > 0 ? params.height - appRoom : 0;
-        Logger.printDebug(() -> "Glass navigation bar base height: " + baseHeight + " app room: " + appRoom);
+        // The room of this bar, not the stored room, which can be the room of a previous bar,
+        // such as after switching between gesture and 3-button navigation.
+        final int barRoom = pivotBar instanceof NavigationBarPatch.PivotBarAccess access
+                ? Math.max(0, access.patch_getSystemButtonsRoom())
+                : appRoom;
+        baseHeight = params != null && params.height > 0 ? params.height - barRoom : 0;
+        Logger.printDebug(() -> "Glass navigation bar base height: " + baseHeight + " app room: " + barRoom);
 
         // The background the app gave the navigation bar, which is put back if the bar
         // is not a horizontal bar at the bottom, such as a navigation rail on large screens.
@@ -530,8 +556,14 @@ public final class GlassNavigationBar {
                         final int contentWidth = buttons.isEmpty() ? 0 : contentWidths[buttons.size() / 2];
 
                         if (contentWidth > 0 && contentBottom > contentTop) {
+                            // The buttons are never narrower than the app allows, or they are wider than
+                            // the capsule, which then cuts the first and the last button.
+                            int minButtonWidth = 0;
+                            for (View button : buttons) {
+                                minButtonWidth = Math.max(minButtonWidth, button.getMinimumWidth());
+                            }
                             final int[] layout = getButtonsLayout(pivotBar.getWidth(), buttons.size(),
-                                    contentWidth, WIDTH_PERCENT, BUTTON_SPACING);
+                                    contentWidth, minButtonWidth, WIDTH_PERCENT, BUTTON_SPACING);
                             final int shown = layout[0];
 
                             // The buttons that do not fit are hidden from the end, but never the selected one.
@@ -583,8 +615,21 @@ public final class GlassNavigationBar {
                             }
 
                             lastContentWidth = contentWidth;
+                            lastMinButtonWidth = minButtonWidth;
                             lastContentHeight = contentHeight;
                             lastBaseHeight = baseHeight;
+                            List<WeakReference<View>> seenButtons = lastButtons;
+                            boolean buttonsChanged = seenButtons.size() != buttons.size();
+                            for (int i = 0, count = buttons.size(); i < count && !buttonsChanged; i++) {
+                                buttonsChanged = seenButtons.get(i).get() != buttons.get(i);
+                            }
+                            if (buttonsChanged) {
+                                List<WeakReference<View>> references = new ArrayList<>(buttons.size());
+                                for (View button : buttons) {
+                                    references.add(new WeakReference<>(button));
+                                }
+                                lastButtons = references;
+                            }
                         }
                     }
                 } else if (background == glass) {
@@ -621,16 +666,19 @@ public final class GlassNavigationBar {
      * @param buttons      The number of buttons.
      * @param contentWidth The usual width of the content of the buttons (the icon or the label), the median,
      *                     so a long label that the app cuts does not make every button wider.
+     * @param appMinWidth  The width the app gives each button at least, see {@link #lastMinButtonWidth}.
      * @param widthPercent The most width of the capsule, in percent of the width of the bar.
      * @param spacing      The room between the content of two buttons.
      * @return The number of buttons shown, and the width of each button.
      */
-    public static int[] getButtonsLayout(int barWidth, int buttons, int contentWidth, int widthPercent, int spacing) {
+    public static int[] getButtonsLayout(int barWidth, int buttons, int contentWidth, int appMinWidth,
+                                         int widthPercent, int spacing) {
         final int maxWidth = Math.max(0, (barWidth - 2 * GlassDrawable.MARGIN_HORIZONTAL) * widthPercent / 100);
-        final int minButtonWidth = Math.max(MIN_BUTTON_WIDTH, contentWidth + MIN_BUTTON_SPACING);
+        final int minWidth = Math.max(MIN_BUTTON_WIDTH, appMinWidth);
+        final int minButtonWidth = Math.max(minWidth, contentWidth + MIN_BUTTON_SPACING);
         final int shown = Math.max(1, Math.min(buttons, maxWidth / minButtonWidth));
-        // With less room, the buttons share the most width of the capsule.
-        final int buttonWidth = Math.min(Math.max(MIN_BUTTON_WIDTH, contentWidth + spacing), maxWidth / shown);
+        // With less room, the buttons share the most width of the capsule, but never less than the app allows.
+        final int buttonWidth = Math.min(Math.max(minWidth, contentWidth + spacing), maxWidth / shown);
         return new int[]{shown, buttonWidth};
     }
 
@@ -940,8 +988,21 @@ public final class GlassNavigationBar {
                 // buttons or gesture handle. The capsule holds the whole height of the buttons
                 // and reaches only slightly into that room, so it floats above the gesture handle.
                 final int bottomRoom = host.getPaddingBottom();
-                final float bottom = bounds.bottom - bottomRoom
+                float bottom = bounds.bottom - bottomRoom
                         + Math.max(0, Math.min(bottomRoom - FLOATING_ROOM, MAX_MARGIN_BOTTOM));
+                // Some accounts lay the slim status bar ("No connection", "You're incognito") out over the room
+                // below the buttons, and it is drawn over the bar. The capsule then does not reach into the room
+                // the slim status bar covers, or its edge is cut. The bar's own translation is left out,
+                // so the capsule keeps its size while the bar is moved behind the slim status bar to hide it.
+                View slimStatusBar = host.getParent() instanceof ViewGroup container
+                        ? container.findViewById(NavigationBarPatch.SLIM_STATUS_BAR)
+                        : null;
+                if (slimStatusBar != null && slimStatusBar.getParent() == host.getParent()
+                        && slimStatusBar.getVisibility() == View.VISIBLE) {
+                    final float slimStatusBarTop = bounds.top + slimStatusBar.getTop()
+                            + slimStatusBar.getTranslationY() - host.getTop();
+                    bottom = Math.min(bottom, Math.max(bounds.bottom - bottomRoom, slimStatusBarTop));
+                }
                 // The capsule ends at the edges of the buttons. The narrow buttons don't fill the bar,
                 // and are in the middle of it.
                 float left = bounds.left + host.getPaddingLeft();
@@ -957,6 +1018,13 @@ public final class GlassNavigationBar {
 
                 final float radius = capsule.height() / 2;
                 updateShaders();
+
+                // The Shorts player ends above the navigation bar, so the background of the window
+                // would show around the capsule, which is white with the light theme.
+                // The Shorts player is always dark, so the bar is kept black around the capsule.
+                if (style == STYLE_SHORTS) {
+                    canvas.drawColor(Color.BLACK);
+                }
 
                 // Soft shadow below the capsule.
                 for (int i = SHADOW_LAYERS; i >= 1; i--) {

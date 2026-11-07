@@ -14,10 +14,8 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
-import app.morphe.patcher.util.getFreeRegisterProvider
+import app.morphe.patcher.patch.resourceXml
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patches.all.misc.clone.setOrGetFallbackPackageName
 import app.morphe.patches.all.misc.crashlog.crashLogPatch
@@ -59,7 +57,9 @@ import app.morphe.patches.youtube.misc.fix.likebutton.fixLikeButtonPatch
 import app.morphe.patches.youtube.misc.fix.padding.fixPagePaddingPatch
 import app.morphe.patches.youtube.misc.fix.pipchatbar.fixPipChatBarPatch
 import app.morphe.patches.youtube.misc.fix.playbackspeed.fixPlaybackSpeedWhilePlayingPatch
+import app.morphe.patches.youtube.misc.fix.preference.addPreferenceScreenHook
 import app.morphe.patches.youtube.misc.fix.preference.fixPreferenceIconPatch
+import app.morphe.patches.youtube.misc.fix.preference.preferenceScreenHookPatch
 import app.morphe.patches.youtube.misc.playservice.is_20_31_or_greater
 import app.morphe.patches.youtube.misc.playservice.is_21_30_or_greater
 import app.morphe.patches.youtube.misc.playservice.versionCheckPatch
@@ -68,15 +68,12 @@ import app.morphe.patches.youtube.shared.YouTubeActivityOnCreateFingerprint
 import app.morphe.util.ResourceGroup
 import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.copyResources
-import app.morphe.util.findElementByAttributeValueOrThrow
 import app.morphe.util.findInstructionIndicesReversedOrThrow
 import app.morphe.util.insertLiteralOverride
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
-import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import com.android.tools.smali.dexlib2.util.MethodUtil
@@ -87,7 +84,7 @@ private const val NATIVE_SNACKBAR_CLASS = "Lapp/morphe/extension/youtube/patches
 
 private val preferences = mutableSetOf<BasePreference>()
 
-private val settingsResourcePatch = resourcePatch {
+private val settingsResourcePatch = patch {
     dependsOn(
         settingsPatch(
             rootPreferences = listOf(
@@ -162,62 +159,46 @@ private val settingsResourcePatch = resourcePatch {
 
         // Remove horizontal divider from the settings Preferences
         // To better match the appearance of the stock YouTube settings.
-        document("res/values/styles.xml").use { document ->
-            val childNodes = document.childNodes
-
+        resourceXml("res/values/styles.xml").use { styles ->
             arrayOf(
                 "Theme.YouTube.Settings",
                 "Theme.YouTube.Settings.Dark",
             ).forEach { value ->
-                val listDividerNode = document.createElement("item")
-                listDividerNode.setAttribute("name", "android:listDivider")
-                listDividerNode.appendChild(document.createTextNode("@null"))
-
-                childNodes.findElementByAttributeValueOrThrow(
-                    "name",
-                    value,
-                ).appendChild(listDividerNode)
+                styles.resource(value).appendChild("item") {
+                    setAttribute("name", "android:listDivider")
+                    text = "@null"
+                }
             }
         }
 
         // Modify the manifest to enhance LicenseActivity behavior
-        document("AndroidManifest.xml").use { document ->
-            val apiActivity = document.childNodes.findElementByAttributeValueOrThrow(
+        resourceXml("AndroidManifest.xml").use { manifest ->
+            val apiActivity = manifest.elementByAttribute(
                 "android:name",
                 "com.google.android.gms.common.api.GoogleApiActivity",
             )
 
             // Prevents the activity from being recreated on configuration changes
             // (e.g., screen rotation), preserving its current state and fragment.
-            apiActivity.setAttribute(
-                "android:configChanges",
-                "orientation|screenSize|keyboardHidden"
-            )
+            apiActivity.setAttribute("android:configChanges", "orientation|screenSize|keyboardHidden")
 
             // Use same theme as other activities. The exiting theme causes the Morphe
             // settings to fade in and not use a transition animation. A custom theme
             // could be used to not show any transition to match the original YT settings
             // submenu behavior.
-            apiActivity.setAttribute(
-                "android:theme",
-                "@style/Theme.AppCompat.DayNight.NoActionBar"
-            )
-
-            val mimeType = document.createElement("data")
-            mimeType.setAttribute("android:mimeType", "text/plain")
+            apiActivity.setAttribute("android:theme", "@style/Theme.AppCompat.DayNight.NoActionBar")
 
             // Add a data intent filter with MIME type "text/plain".
             // Some devices crash if undeclared data is passed to an intent,
             // and this change appears to fix the issue.
-            val intentFilter = document.createElement("intent-filter")
-            intentFilter.appendChild(mimeType)
-
-            apiActivity.appendChild(intentFilter)
+            apiActivity.appendChild("intent-filter") {
+                appendChild("data") { setAttribute("android:mimeType", "text/plain") }
+            }
         }
     }
 }
 
-val settingsPatch = bytecodePatch(
+val settingsPatch = patch(
     description = "Adds settings for Morphe to YouTube."
 ) {
     dependsOn(
@@ -233,6 +214,7 @@ val settingsPatch = bytecodePatch(
         fixTouchExplorationPatch,
         fixPlaybackSpeedWhilePlayingPatch,
         fixPreferenceIconPatch,
+        preferenceScreenHookPatch,
         fixLikeButtonPatch,
         fixContentProviderPatch,
         fixGuideCachePatch,
@@ -333,36 +315,13 @@ val settingsPatch = bytecodePatch(
             }
         }
 
-        SettingsPreferenceScreenSyntheticFingerprint.let {
-            it.method.apply {
-                // Reuse the method's own getPreferenceScreen call.
-                val getPreferenceScreenIndex = it.instructionMatches[1].index
-                val fragmentRegister =
-                    getInstruction<FiveRegisterInstruction>(getPreferenceScreenIndex).registerC
-                val getPreferenceScreenReference =
-                    getInstruction<ReferenceInstruction>(getPreferenceScreenIndex).reference
-
-                // fragmentRegister must survive, because the settings menu filter patch
-                // adds its own call on it after these instructions.
-                val insertIndex = it.instructionMatches.last().index
-                val registerProvider = getFreeRegisterProvider(insertIndex, 3, fragmentRegister)
-                val screenRegister = registerProvider.getFreeRegister()
-                val preferenceRegister = registerProvider.getFreeRegister()
-                val nameRegister = registerProvider.getFreeRegister()
-
-                addInstructionsAtControlFlowLabel(
-                    insertIndex,
-                    customSettingsNameInstructions(
-                        getPreferenceScreen = """
-                            invoke-virtual { v$fragmentRegister }, $getPreferenceScreenReference
-                            move-result-object v$screenRegister
-                        """,
-                        screenRegister = screenRegister,
-                        preferenceRegister = preferenceRegister,
-                        nameRegister = nameRegister
-                    )
-                )
-            }
+        addPreferenceScreenHook(2) { screenRegister, (preferenceRegister, nameRegister) ->
+            customSettingsNameInstructions(
+                getPreferenceScreen = "",
+                screenRegister = screenRegister,
+                preferenceRegister = preferenceRegister,
+                nameRegister = nameRegister
+            )
         }
 
         // Show the extension messages in the YouTube snackbar instead of a toast,
@@ -395,7 +354,6 @@ val settingsPatch = bytecodePatch(
 /**
  * Modifies the activity to show Morphe settings instead of its original purpose.
  */
-context(patchContext: BytecodePatchContext)
 internal fun modifyActivityForSettingsInjection(
     activityOnCreateFingerprint: Fingerprint,
     extensionClassType: String,
