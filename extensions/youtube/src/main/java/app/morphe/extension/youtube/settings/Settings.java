@@ -48,6 +48,7 @@ import app.morphe.extension.youtube.patches.ChangeHeaderPatch.HeaderLogo;
 import app.morphe.extension.youtube.patches.ChangePipActionsPatch.PipAction;
 import app.morphe.extension.youtube.patches.ChangeStartPagePatch.StartPage;
 import app.morphe.extension.youtube.patches.ClassicSubscriptionsLayoutPatch;
+import app.morphe.extension.youtube.patches.CustomSeekbarThumbPatch.ThumbScaleType;
 import app.morphe.extension.youtube.patches.DisableVideoCodecsPatch.VideoCodec;
 import app.morphe.extension.youtube.patches.ExitFullscreenPatch.FullscreenMode;
 import app.morphe.extension.youtube.patches.FeedCardLayoutPatch.FeedCardLayout;
@@ -742,6 +743,9 @@ public class Settings extends SharedYouTubeSettings {
     public static final BooleanSetting SLIDE_TO_SEEK = new BooleanSetting("morphe_slide_to_seek", FALSE, true);
     public static final BooleanSetting TAP_TO_SEEK = new BooleanSetting("morphe_tap_to_seek", FALSE);
     public static final BooleanSetting THUMBNAIL_PREVIEW = new BooleanSetting("morphe_seekbar_thumbnail_preview", TRUE);
+    public static final BooleanSetting CUSTOM_SEEKBAR_THUMB = new BooleanSetting("morphe_custom_seekbar_thumb", FALSE);
+    public static final StringSetting CUSTOM_SEEKBAR_THUMB_FILE = new StringSetting("morphe_custom_seekbar_thumb_file", "", parent(CUSTOM_SEEKBAR_THUMB));
+    public static final EnumSetting<ThumbScaleType> CUSTOM_SEEKBAR_THUMB_SCALE_TYPE = new EnumSetting<>("morphe_custom_seekbar_thumb_scale_type", ThumbScaleType.FIT_SEEKBAR, parent(CUSTOM_SEEKBAR_THUMB));
 
     // Snackbar
     public static final BooleanSetting HIDE_SNACKBAR = new BooleanSetting("morphe_hide_snackbar", FALSE, true);
@@ -804,6 +808,7 @@ public class Settings extends SharedYouTubeSettings {
     public static final IntegerSetting NICONICO_COMMENTS_OPACITY = new IntegerSetting("morphe_niconico_comments_opacity", 100, parent(NICONICO_COMMENTS));
     public static final IntegerSetting NICONICO_COMMENTS_TRAVEL_DURATION = new IntegerSetting("morphe_niconico_comments_travel_duration", 7, parent(NICONICO_COMMENTS));
     public static final IntegerSetting NICONICO_COMMENTS_DISPLAY_AREA = new IntegerSetting("morphe_niconico_comments_display_area", 100, parent(NICONICO_COMMENTS));
+    public static final BooleanSetting NICONICO_COMMENTS_HIDE_CROWDED = new BooleanSetting("morphe_niconico_comments_hide_crowded", FALSE, parent(NICONICO_COMMENTS));
     /** Max comment length slider value that shows all comments. */
     public static final int NICONICO_COMMENTS_MAX_LENGTH_NO_LIMIT = 100;
     public static final IntegerSetting NICONICO_COMMENTS_MAX_LENGTH = new IntegerSetting("morphe_niconico_comments_max_length", NICONICO_COMMENTS_MAX_LENGTH_NO_LIMIT, parent(NICONICO_COMMENTS));
