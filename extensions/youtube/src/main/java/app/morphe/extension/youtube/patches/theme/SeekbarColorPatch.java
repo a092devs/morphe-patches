@@ -23,10 +23,6 @@ import app.morphe.extension.youtube.settings.Settings;
 @SuppressWarnings("unused")
 public final class SeekbarColorPatch {
 
-    private static final boolean SEEKBAR_CUSTOM_COLOR_ENABLED = Settings.SEEKBAR_CUSTOM_COLOR.get();
-
-    private static final boolean HIDE_SEEKBAR_THUMBNAIL_ENABLED = Settings.HIDE_SEEKBAR_THUMBNAIL.get();
-
     /**
      * Default color of the litho seekbar.
      * Differs slightly from the default custom seekbar color setting.
@@ -75,7 +71,7 @@ public final class SeekbarColorPatch {
         Color.colorToHSV(ORIGINAL_SEEKBAR_COLOR, hsv);
         ORIGINAL_SEEKBAR_COLOR_BRIGHTNESS = hsv[2];
 
-        customSeekbarColor = SEEKBAR_CUSTOM_COLOR_ENABLED
+        customSeekbarColor = isCustomSeekbarColorEnabled()
                 ? loadCustomSeekbarColor()
                 : ORIGINAL_SEEKBAR_COLOR;
     }
@@ -98,26 +94,34 @@ public final class SeekbarColorPatch {
     }
 
     public static int getSeekbarColor() {
-        return customSeekbarColor;
+        return isCustomSeekbarColorEnabled() ? loadCustomSeekbarColor() : ORIGINAL_SEEKBAR_COLOR;
     }
 
     public static int getSeekbarAccentColor() {
-        return customSeekbarColorGradient[1];
+        if (isCustomSeekbarColorEnabled()) {
+            loadCustomSeekbarColor();
+            return customSeekbarColorGradient[1];
+        }
+        return ORIGINAL_SEEKBAR_COLOR;
     }
 
     public static boolean isCustomSeekbarColorEnabled() {
-        return SEEKBAR_CUSTOM_COLOR_ENABLED;
+        return Settings.SEEKBAR_CUSTOM_COLOR.get();
     }
 
     public static boolean isPatchIncluded() {
         return true;
     }
 
+    public static boolean isHideSeekbarThumbnailEnabled() {
+        return Settings.HIDE_SEEKBAR_THUMBNAIL.get();
+    }
+
     /**
      * Injection point.
      */
     public static boolean showWatchHistoryProgressDrawable(boolean original) {
-        return !HIDE_SEEKBAR_THUMBNAIL_ENABLED && original;
+        return !isHideSeekbarThumbnailEnabled() && original;
     }
 
     /**
@@ -130,11 +134,11 @@ public final class SeekbarColorPatch {
      */
     public static int getLithoColor(int colorValue) {
         if (colorValue == ORIGINAL_SEEKBAR_COLOR) {
-            if (HIDE_SEEKBAR_THUMBNAIL_ENABLED) {
+            if (isHideSeekbarThumbnailEnabled()) {
                 return 0x0;
             }
 
-            return customSeekbarColor;
+            return getSeekbarColor();
         }
 
         return colorValue;
@@ -164,26 +168,30 @@ public final class SeekbarColorPatch {
     public static int[] getPlayerLinearGradient(int[] original, int x0, int y1) {
         // This hook is used for both the player and the feed.
         // Feed usage always has x0 and y1 value of zero, and the player is always non-zero.
-        if (HIDE_SEEKBAR_THUMBNAIL_ENABLED && x0 == 0 && y1 == 0) {
+        if (isHideSeekbarThumbnailEnabled() && x0 == 0 && y1 == 0) {
             return HIDDEN_SEEKBAR_GRADIENT_COLORS;
         }
-        return SEEKBAR_CUSTOM_COLOR_ENABLED
-                ? customSeekbarColorGradient
-                : original;
+        if (isCustomSeekbarColorEnabled()) {
+            loadCustomSeekbarColor();
+            return customSeekbarColorGradient;
+        }
+        return original;
     }
 
     /**
      * Injection point.
      */
     public static int[] getLithoLinearGradient(int[] colors, float[] positions) {
-        if (SEEKBAR_CUSTOM_COLOR_ENABLED || HIDE_SEEKBAR_THUMBNAIL_ENABLED) {
+        if (isCustomSeekbarColorEnabled() || isHideSeekbarThumbnailEnabled()) {
             // Most litho usage of linear gradients is hooked here,
             // so must only change if the values are those for the seekbar.
             if ((Arrays.equals(FEED_ORIGINAL_SEEKBAR_GRADIENT_COLORS, colors)
                     && Arrays.equals(FEED_ORIGINAL_SEEKBAR_GRADIENT_POSITIONS, positions))) {
-                return HIDE_SEEKBAR_THUMBNAIL_ENABLED
-                        ? HIDDEN_SEEKBAR_GRADIENT_COLORS
-                        : customSeekbarColorGradient;
+                if (isHideSeekbarThumbnailEnabled()) {
+                    return HIDDEN_SEEKBAR_GRADIENT_COLORS;
+                }
+                loadCustomSeekbarColor();
+                return customSeekbarColorGradient;
             }
 
             Logger.printDebug(() -> "Ignoring gradient colors: " + colorArrayToHex(colors)
@@ -199,12 +207,12 @@ public final class SeekbarColorPatch {
      * Overrides color when video player seekbar is clicked.
      */
     public static int getVideoPlayerSeekbarClickedColor(int colorValue) {
-        if (!SEEKBAR_CUSTOM_COLOR_ENABLED) {
+        if (!isCustomSeekbarColorEnabled()) {
             return colorValue;
         }
 
         return colorValue == ORIGINAL_SEEKBAR_COLOR
-                ? customSeekbarColor
+                ? getSeekbarColor()
                 : colorValue;
     }
 
@@ -214,7 +222,7 @@ public final class SeekbarColorPatch {
      * Overrides color used for the video player seekbar.
      */
     public static int getVideoPlayerSeekbarColor(int originalColor) {
-        return SEEKBAR_CUSTOM_COLOR_ENABLED
+        return isCustomSeekbarColorEnabled()
                 ? getSeekbarColorValue(originalColor)
                 : originalColor;
     }
@@ -225,6 +233,7 @@ public final class SeekbarColorPatch {
      */
     private static int getSeekbarColorValue(int originalColor) {
         try {
+            final int customColor = loadCustomSeekbarColor();
             final int alphaDifference = Color.alpha(originalColor) - Color.alpha(ORIGINAL_SEEKBAR_COLOR);
 
             // The seekbar uses the same color but different brightness for different situations.
@@ -237,7 +246,7 @@ public final class SeekbarColorPatch {
             hsv[1] = customSeekbarColorHSV[1];
             hsv[2] = Utils.clamp(customSeekbarColorHSV[2] + brightnessDifference, 0, 1);
 
-            final int replacementAlpha = Utils.clamp(Color.alpha(customSeekbarColor) + alphaDifference, 0, 255);
+            final int replacementAlpha = Utils.clamp(Color.alpha(customColor) + alphaDifference, 0, 255);
             final int replacementColor = Color.HSVToColor(replacementAlpha, hsv);
             Logger.printDebug(() -> String.format("Original color: #%08X  replacement color: #%08X",
                             originalColor, replacementColor));
