@@ -65,8 +65,7 @@ import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerAnyModernA
 import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerDragAndDropAvailability;
 import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerHideOverlayButtonsAvailability;
 import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerHorizontalDragAvailability;
-import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerHorizontalDragPlaybackAvailability;
-import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerHorizontalRepositioningAvailability;
+import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerHorizontalDragOptionsAvailability;
 import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerMinimalBar2Availability;
 import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerMinimalBarAvailability;
 import app.morphe.extension.youtube.patches.MiniplayerPatch.MiniplayerOverlayOpacityAvailability;
@@ -450,8 +449,8 @@ public class Settings extends SharedYouTubeSettings {
     public static final EnumSetting<MiniplayerType> MINIPLAYER_TYPE = new EnumSetting<>("morphe_miniplayer_type", VersionCheckPatch.IS_21_29_OR_GREATER ? MiniplayerType.MODERN_4 : MiniplayerType.DEFAULT, true);
     public static final BooleanSetting MINIPLAYER_DISABLE_DRAG_AND_DROP = new BooleanSetting("morphe_miniplayer_disable_drag_and_drop", FALSE, true, new MiniplayerDragAndDropAvailability());
     public static final BooleanSetting MINIPLAYER_DISABLE_HORIZONTAL_DRAG = new BooleanSetting("morphe_miniplayer_disable_horizontal_drag", FALSE, true, new MiniplayerHorizontalDragAvailability());
-    public static final BooleanSetting MINIPLAYER_DISABLE_HORIZONTAL_DRAG_PLAYBACK = new BooleanSetting("morphe_miniplayer_disable_horizontal_drag_playback", FALSE, true, new MiniplayerHorizontalDragPlaybackAvailability());
-    public static final BooleanSetting MINIPLAYER_DISABLE_HORIZONTAL_REPOSITION = new BooleanSetting("morphe_miniplayer_disable_horizontal_reposition", FALSE, true, new MiniplayerHorizontalRepositioningAvailability());
+    public static final BooleanSetting MINIPLAYER_DISABLE_HORIZONTAL_DRAG_PLAYBACK = new BooleanSetting("morphe_miniplayer_disable_horizontal_drag_playback", FALSE, true, new MiniplayerHorizontalDragOptionsAvailability());
+    public static final BooleanSetting MINIPLAYER_DISABLE_HORIZONTAL_REPOSITION = new BooleanSetting("morphe_miniplayer_disable_horizontal_reposition", FALSE, true, new MiniplayerHorizontalDragOptionsAvailability());
     public static final BooleanSetting MINIPLAYER_DISABLE_ROUNDED_CORNERS = new BooleanSetting("morphe_miniplayer_disable_rounded_corners", FALSE, true, new MiniplayerAnyModernAvailability());
     public static final BooleanSetting MINIPLAYER_HIDE_TITLE = new BooleanSetting("morphe_miniplayer_hide_title", FALSE, true, new MiniplayerMinimalBar2Availability());
     public static final BooleanSetting MINIPLAYER_SWIPE_UP_EXPAND = new BooleanSetting("morphe_miniplayer_swipe_up_expand", FALSE, new MiniplayerMinimalBarAvailability());
@@ -601,6 +600,9 @@ public class Settings extends SharedYouTubeSettings {
     public static final BooleanSetting HIDE_PLAYER_FLYOUT_QUALITY_FOOTER = new BooleanSetting("morphe_hide_player_flyout_quality_footer", FALSE, true, new HideQualityFlyoutMenuHeaderFooterAvailability());
     public static final BooleanSetting HIDE_PLAYER_FLYOUT_QUALITY_HEADER = new BooleanSetting("morphe_hide_player_flyout_quality_header", FALSE, true, new HideQualityFlyoutMenuHeaderFooterAvailability());
     public static final BooleanSetting HIDE_PLAYER_FLYOUT_WATCH_IN_VR = new BooleanSetting("morphe_hide_player_flyout_watch_in_vr", FALSE, parentNot(HIDE_SETTINGS_BUTTON));
+
+    // On-the-go
+    public static final BooleanSetting ON_THE_GO = new BooleanSetting("morphe_on_the_go", TRUE);
 
     // Picture-in-picture actions
     public static final EnumSetting<PipAction> PIP_ACTION_LEFT = new EnumSetting<>("morphe_pip_action_left", PipAction.DEFAULT);
@@ -809,6 +811,11 @@ public class Settings extends SharedYouTubeSettings {
     public static final IntegerSetting NICONICO_COMMENTS_OPACITY = new IntegerSetting("morphe_niconico_comments_opacity", 100, parent(NICONICO_COMMENTS));
     public static final IntegerSetting NICONICO_COMMENTS_TRAVEL_DURATION = new IntegerSetting("morphe_niconico_comments_travel_duration", 7, parent(NICONICO_COMMENTS));
     public static final IntegerSetting NICONICO_COMMENTS_DISPLAY_AREA = new IntegerSetting("morphe_niconico_comments_display_area", 100, parent(NICONICO_COMMENTS));
+    public static final BooleanSetting NICONICO_COMMENTS_PORTRAIT = new BooleanSetting("morphe_niconico_comments_portrait", TRUE, parent(NICONICO_COMMENTS));
+    public static final BooleanSetting NICONICO_COMMENTS_SEPARATE_PORTRAIT = new BooleanSetting("morphe_niconico_comments_separate_portrait", FALSE, parentsAll(NICONICO_COMMENTS, NICONICO_COMMENTS_PORTRAIT));
+    public static final IntegerSetting NICONICO_COMMENTS_PORTRAIT_FONT_SIZE = new IntegerSetting("morphe_niconico_comments_portrait_font_size", 20, parentsAll(NICONICO_COMMENTS, NICONICO_COMMENTS_PORTRAIT, NICONICO_COMMENTS_SEPARATE_PORTRAIT));
+    public static final IntegerSetting NICONICO_COMMENTS_PORTRAIT_TRAVEL_DURATION = new IntegerSetting("morphe_niconico_comments_portrait_travel_duration", 7, parentsAll(NICONICO_COMMENTS, NICONICO_COMMENTS_PORTRAIT, NICONICO_COMMENTS_SEPARATE_PORTRAIT));
+    public static final IntegerSetting NICONICO_COMMENTS_PORTRAIT_DISPLAY_AREA = new IntegerSetting("morphe_niconico_comments_portrait_display_area", 100, parentsAll(NICONICO_COMMENTS, NICONICO_COMMENTS_PORTRAIT, NICONICO_COMMENTS_SEPARATE_PORTRAIT));
     public static final BooleanSetting NICONICO_COMMENTS_HIDE_CROWDED = new BooleanSetting("morphe_niconico_comments_hide_crowded", FALSE, parent(NICONICO_COMMENTS));
     /** Max comment length slider value that shows all comments. */
     public static final int NICONICO_COMMENTS_MAX_LENGTH_NO_LIMIT = 100;
@@ -1407,6 +1414,12 @@ public class Settings extends SharedYouTubeSettings {
         SeekBarPreference.register(new SeekBarConfig(NICONICO_COMMENTS_TRAVEL_DURATION,
                 3, 15, 1, "s"));
         SeekBarPreference.register(new SeekBarConfig(NICONICO_COMMENTS_DISPLAY_AREA,
+                10, 100, 10, "%"));
+        SeekBarPreference.register(new SeekBarConfig(NICONICO_COMMENTS_PORTRAIT_FONT_SIZE,
+                12, 40, 1, "sp"));
+        SeekBarPreference.register(new SeekBarConfig(NICONICO_COMMENTS_PORTRAIT_TRAVEL_DURATION,
+                3, 15, 1, "s"));
+        SeekBarPreference.register(new SeekBarConfig(NICONICO_COMMENTS_PORTRAIT_DISPLAY_AREA,
                 10, 100, 10, "%"));
         SeekBarPreference.register(new SeekBarConfig(NICONICO_COMMENTS_MAX_LENGTH,
                 10, NICONICO_COMMENTS_MAX_LENGTH_NO_LIMIT, 10, "", 1,
