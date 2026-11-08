@@ -40,6 +40,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.Nullable;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -82,6 +83,35 @@ public class ColorPickerPreference extends EditTextPreference {
 
     /** Associated setting for storing the color value. */
     private StringSetting colorSetting;
+
+    @Nullable
+    public StringSetting getColorSetting() {
+        if (colorSetting == null) {
+            String key = getKey();
+            if (key != null) {
+                Setting<?> setting = Setting.getSettingFromPath(key);
+                if (setting instanceof StringSetting stringSetting) {
+                    colorSetting = stringSetting;
+                }
+            }
+        }
+        return colorSetting;
+    }
+
+    public void setColorSetting(@Nullable StringSetting colorSetting) {
+        this.colorSetting = colorSetting;
+    }
+
+    @Override
+    public void setKey(String key) {
+        super.setKey(key);
+        if (key != null) {
+            Setting<?> setting = Setting.getSettingFromPath(key);
+            if (setting instanceof StringSetting stringSetting) {
+                colorSetting = stringSetting;
+            }
+        }
+    }
 
     /** Dialog TextWatcher for the EditText to monitor color input changes. */
     private TextWatcher colorTextWatcher;
@@ -152,13 +182,9 @@ public class ColorPickerPreference extends EditTextPreference {
      * Initializes the preference by setting up the EditText, loading the color, and set the widget layout.
      */
     private void init() {
-        if (getKey() != null) {
-            colorSetting = (StringSetting) Setting.getSettingFromPath(getKey());
-            if (colorSetting == null) {
-                Logger.printException(() -> "Could not find color setting for: " + getKey());
-            }
-        } else {
-            Logger.printDebug(() -> "initialized without key, settings will be loaded later");
+        getColorSetting();
+        if (getKey() != null && colorSetting == null) {
+            Logger.printException(() -> "Could not find color setting for: " + getKey());
         }
 
         EditText editText = getEditText();
@@ -180,8 +206,9 @@ public class ColorPickerPreference extends EditTextPreference {
             super.setText(colorString);
 
             currentColor = Color.parseColor(colorString);
-            if (colorSetting != null) {
-                colorSetting.save(getColorString(currentColor, opacitySliderEnabled));
+            StringSetting setting = getColorSetting();
+            if (setting != null) {
+                setting.save(getColorString(currentColor, opacitySliderEnabled));
             }
             updateDialogColorDot();
             updateWidgetColorDot();
@@ -190,7 +217,10 @@ public class ColorPickerPreference extends EditTextPreference {
             // since this preference is updated with the new setting text.
             Logger.printDebug(() -> "Parse color error: " + colorString, ex);
             Utils.showToastShort(str("morphe_settings_color_invalid"));
-            setText(colorSetting.resetToDefault());
+            StringSetting setting = getColorSetting();
+            if (setting != null && setting.defaultValue != null) {
+                setText(setting.resetToDefault());
+            }
         } catch (Exception ex) {
             Logger.printException(() -> "setText failure: " + colorString, ex);
         }
@@ -248,8 +278,26 @@ public class ColorPickerPreference extends EditTextPreference {
     protected void onDialogNeutralClicked() {
         // Default implementation.
         try {
-            final int defaultColor = Color.parseColor(colorSetting.defaultValue);
-            dialogColorPickerView.setColor(defaultColor);
+            StringSetting setting = getColorSetting();
+            if (setting != null && setting.defaultValue != null) {
+                final int defaultColor = Color.parseColor(setting.defaultValue);
+                if (dialogColorPickerView != null) {
+                    dialogColorPickerView.setColor(defaultColor);
+                }
+                if (currentColor != defaultColor) {
+                    currentColor = defaultColor;
+                    updateDialogColorDot();
+                    updateWidgetColorDot();
+                }
+                EditText editText = getEditText();
+                if (editText != null) {
+                    String defaultColorString = getColorString(defaultColor, opacitySliderEnabled);
+                    editText.setText(defaultColorString);
+                    editText.setSelection(defaultColorString.length());
+                }
+            } else {
+                Logger.printDebug(() -> "Reset button: No default color available for " + getKey());
+            }
         } catch (Exception ex) {
             Logger.printException(() -> "Reset button failure", ex);
         }
@@ -265,6 +313,28 @@ public class ColorPickerPreference extends EditTextPreference {
     @Override
     protected void showDialog(Bundle state) {
         Context context = getContext();
+
+        // Ensure colorSetting is resolved and currentColor is initialized if needed.
+        if (currentColor == 0) {
+            String text = getText();
+            if (text != null && !text.isEmpty()) {
+                try {
+                    currentColor = Color.parseColor(text);
+                } catch (Exception ignored) {
+                }
+            } else {
+                StringSetting setting = getColorSetting();
+                if (setting != null) {
+                    String val = setting.get();
+                    if (val != null && !val.isEmpty()) {
+                        try {
+                            currentColor = Color.parseColor(val);
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            }
+        }
 
         // Create content container for all dialog views.
         LinearLayout contentContainer = new LinearLayout(context);
