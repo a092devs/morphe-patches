@@ -82,7 +82,7 @@ public final class AddToQueuePatch {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

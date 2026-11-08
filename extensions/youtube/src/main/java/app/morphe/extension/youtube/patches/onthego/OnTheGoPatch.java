@@ -69,7 +69,7 @@ public final class OnTheGoPatch {
     private static volatile byte[] upsellRequest;
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true;
     }
 
     /**

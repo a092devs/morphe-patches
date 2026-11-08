@@ -28,7 +28,7 @@ public class VideoDelayPatch {
     private static volatile int lastLoggedDelayMs;
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

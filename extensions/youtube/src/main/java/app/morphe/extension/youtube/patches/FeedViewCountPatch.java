@@ -173,7 +173,7 @@ public final class FeedViewCountPatch {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

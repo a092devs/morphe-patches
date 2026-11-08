@@ -59,7 +59,7 @@ public final class StableCaptionBlocks {
     private StableCaptionBlocks() {}
 
     private static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     static boolean isEnabled() {

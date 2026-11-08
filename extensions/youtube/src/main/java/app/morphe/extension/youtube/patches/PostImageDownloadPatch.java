@@ -203,7 +203,7 @@ public final class PostImageDownloadPatch {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     private PostImageDownloadPatch() {

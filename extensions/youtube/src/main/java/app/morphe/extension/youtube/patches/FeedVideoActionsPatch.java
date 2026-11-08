@@ -206,7 +206,7 @@ public final class FeedVideoActionsPatch {
     private static final AtomicInteger savedVideosChanges = new AtomicInteger();
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     private static final class VideoCard {

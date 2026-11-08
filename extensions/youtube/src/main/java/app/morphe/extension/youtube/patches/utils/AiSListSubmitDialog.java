@@ -47,7 +47,7 @@ public final class AiSListSubmitDialog {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     public static int addFlyoutButton(Object flyoutPanel, int index, String videoId) {

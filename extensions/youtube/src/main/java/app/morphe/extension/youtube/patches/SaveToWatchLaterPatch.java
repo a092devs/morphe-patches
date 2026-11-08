@@ -36,7 +36,7 @@ public final class SaveToWatchLaterPatch {
     private static volatile SaveToWatchLaterRequest saveToWatchLaterRequest;
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

@@ -48,7 +48,7 @@ public final class ShortsDownloadButton {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

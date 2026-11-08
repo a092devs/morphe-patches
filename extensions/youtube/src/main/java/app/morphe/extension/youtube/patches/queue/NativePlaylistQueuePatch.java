@@ -306,7 +306,7 @@ public final class NativePlaylistQueuePatch {
     private NativePlaylistQueuePatch() {}
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

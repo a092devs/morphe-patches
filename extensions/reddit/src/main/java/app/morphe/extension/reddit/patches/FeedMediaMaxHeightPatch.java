@@ -19,7 +19,7 @@ public final class FeedMediaMaxHeightPatch {
      * @return If this patch was included during patching.
      */
     public static boolean isPatchIncluded() {
-        return false;  // Modified during patching.
+        return true;  // Modified during patching.
     }
 
     /**

@@ -43,7 +43,7 @@ public final class ChannelWhitelist {
             new EnumMap<>(WhitelistType.class);
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     public static int addFlyoutButtons(Object flyoutPanel, int nextButtonIndex, boolean isMyTabHistoryFlyout) {

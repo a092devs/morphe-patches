@@ -119,7 +119,26 @@ public final class CustomSeekbarThumbPatch {
     private CustomSeekbarThumbPatch() {}
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true;
+    }
+
+    /**
+     * Runtime helper for LSPosed / bytecode hook engines:
+     * Attempts to draw the custom thumb. Returns true if drawn (so default circle drawing can be skipped).
+     */
+    public static boolean drawCustomThumb(Canvas canvas, float cx, float cy, float radius) {
+        try {
+            if (Settings.CUSTOM_SEEKBAR_THUMB.get() && radius >= Dim.dp(MIN_RADIUS_DP)) {
+                Drawable thumb = getThumbDrawable();
+                if (thumb != null) {
+                    drawThumb(canvas, thumb, cx, cy, radius);
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            Logger.printException(() -> "drawCustomThumb failure", ex);
+        }
+        return false;
     }
 
     /**

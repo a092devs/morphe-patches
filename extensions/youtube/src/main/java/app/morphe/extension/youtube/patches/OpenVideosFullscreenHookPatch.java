@@ -85,7 +85,7 @@ public class OpenVideosFullscreenHookPatch {
      * used by {@link OpenVideosFullscreenHookPatch}.
      */
     private static boolean isPatchIncluded() {
-        return false;  // Modified during patching.
+        return true;  // Modified during patching.
     }
 
     /**

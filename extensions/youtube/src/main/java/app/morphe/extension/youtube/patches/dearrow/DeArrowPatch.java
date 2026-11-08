@@ -458,7 +458,7 @@ public final class DeArrowPatch {
      * Changed during patching, so other patches only use DeArrow if this patch is included.
      */
     private static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**

@@ -150,7 +150,7 @@ public final class HideStatusBarPatch {
      * used by {@link NavigationBarPatch}.
      */
     private static boolean isPatchIncluded() {
-        return false;  // Modified during patching.
+        return true;  // Modified during patching.
     }
 
     /**

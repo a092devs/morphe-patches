@@ -178,7 +178,7 @@ public final class NavigationBarPatch {
             : 0;
 
     public static boolean isPatchIncluded() {
-        return false;
+        return true;
     }
 
     /**

@@ -1186,7 +1186,7 @@ public class ThemeColorPatch {
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isPatchIncluded() {
-        return false;  // Modified during patching.
+        return true;  // Modified during patching.
     }
 
     /**

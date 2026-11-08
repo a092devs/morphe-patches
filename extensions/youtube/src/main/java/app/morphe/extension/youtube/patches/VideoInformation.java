@@ -225,7 +225,7 @@ public final class VideoInformation {
     }
 
     private static boolean isPatchIncluded() {
-        return false;  // Modified during patching.
+        return true;  // Modified during patching.
     }
 
     private static boolean isPlaybackAudioPitchEnabled() {

@@ -110,7 +110,7 @@ public final class SeekbarColorPatch {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true;
     }
 
     /**

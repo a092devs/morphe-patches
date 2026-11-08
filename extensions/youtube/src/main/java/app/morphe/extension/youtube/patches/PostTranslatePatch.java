@@ -179,7 +179,7 @@ public final class PostTranslatePatch {
     }
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     private PostTranslatePatch() {

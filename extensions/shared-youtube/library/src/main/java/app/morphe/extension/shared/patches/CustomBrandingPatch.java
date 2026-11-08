@@ -222,7 +222,7 @@ public class CustomBrandingPatch {
      * If custom branding is included in the app.
      */
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     private static BrandingTheme getLauncherIconBranding() {

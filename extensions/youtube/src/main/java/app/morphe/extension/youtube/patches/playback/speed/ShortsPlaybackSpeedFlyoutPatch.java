@@ -35,7 +35,7 @@ public final class ShortsPlaybackSpeedFlyoutPatch {
             : "yt_outline_play_arrow_half_circle_black_24";
 
     public static boolean isPatchIncluded() {
-        return false; // Modified during patching.
+        return true; // Modified during patching.
     }
 
     /**
