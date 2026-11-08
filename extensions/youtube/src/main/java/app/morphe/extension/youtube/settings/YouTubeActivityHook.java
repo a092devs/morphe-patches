@@ -19,6 +19,7 @@ import android.widget.Toolbar;
 
 import com.google.android.gms.common.api.GoogleApiActivity;
 
+import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.ResourceType;
 import app.morphe.extension.shared.ResourceUtils;
 import app.morphe.extension.shared.Utils;
@@ -139,18 +140,18 @@ public class YouTubeActivityHook extends BaseActivityHook {
     @SuppressWarnings("unused")
     public static boolean useCairoSettingsFragment(boolean original) {
         if (Settings.RESTORE_OLD_SETTINGS_MENUS.get()) {
-            return false;
+            return Logger.traceOverride("YouTubeActivityHook.useCairoSettingsFragment", original, false);
         }
         // Spoofing can cause half broken settings menus of old and new settings.
         if (SpoofAppVersionPatch.isSpoofingToLessThan("19.35.36")) {
-            return false;
+            return Logger.traceOverride("YouTubeActivityHook.useCairoSettingsFragment", original, false);
         }
 
         // On the first launch of a clean install, forcing the Cairo menu can give a
         // half broken appearance because all the preference icons may not be available yet.
         // 19.34+ Cairo settings are always on, so it doesn't need to be forced anyway.
         // Cairo setting will show on the next launch of the app.
-        return original;
+        return Logger.traceOverride("YouTubeActivityHook.useCairoSettingsFragment", original, original);
     }
 
     /**
@@ -195,6 +196,6 @@ public class YouTubeActivityHook extends BaseActivityHook {
      */
     @SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted"})
     public static boolean useBoldIcons(boolean original) {
-        return USE_BOLD_ICONS;
+        return Logger.traceOverride("YouTubeActivityHook.useBoldIcons", original, USE_BOLD_ICONS);
     }
 }

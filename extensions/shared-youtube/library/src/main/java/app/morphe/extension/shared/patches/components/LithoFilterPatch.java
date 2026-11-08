@@ -50,10 +50,8 @@ public final class LithoFilterPatch {
             }
             builder.append(" Path: ");
             builder.append(path);
-            if (SharedYouTubeSettings.DEBUG_PROTOBUFFER.get()) {
-                builder.append(" BufferStrings: ");
-                builder.append(asciiStrings.getStrings());
-            }
+            builder.append(" BufferStrings: ");
+            builder.append(asciiStrings.getStrings());
 
             return builder.toString();
         }
@@ -206,7 +204,11 @@ public final class LithoFilterPatch {
             LithoFilterParameters parameter = new LithoFilterParameters(
                     contextInterface, identifier, pathBuilder, accessibility,
                     buffer, new BufferAsciiStrings(buffer));
-            Logger.printDebug(() -> "Searching " + parameter);
+            // Logged only with the protocol buffer setting, because each component of every list is searched,
+            // and these logs would push all the others out of the log buffer within minutes.
+            if (SharedYouTubeSettings.DEBUG_PROTOBUFFER.get()) {
+                Logger.printDebug(() -> "Searching " + parameter);
+            }
 
             if (identifierSearchTree.matches(identifier, parameter)
                     || pathSearchTree.matches(pathBuilder, parameter)) {

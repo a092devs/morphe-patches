@@ -391,6 +391,8 @@ public class RestoreOldVideoActionBarPatch {
         } catch (RuntimeException ex) {
             // A section that 'Hide related videos' changed in place after its serialized size was saved.
             // Depending on the change, this throws an IllegalStateException or a RuntimeException.
+            Logger.traceEvent("RestoreOldVideoActionBarPatch",
+                    "Two rows not applied, the section changed in place: " + ex);
             return null;
         }
 
@@ -547,10 +549,8 @@ public class RestoreOldVideoActionBarPatch {
      * Turns off a feature flag that interferes with overriding config.
      */
     public static boolean useMediaSessionFeatureFlag(boolean original) {
-        if (FIX_VIDEO_ACTION_BAR) {
-            return false;
-        }
-        return original;
+        return Logger.traceOverride("RestoreOldVideoActionBarPatch.useMediaSessionFeatureFlag", original,
+                !FIX_VIDEO_ACTION_BAR && original);
     }
 
 
@@ -686,9 +686,10 @@ public class RestoreOldVideoActionBarPatch {
      * Injection point.
      */
     public static String getVideoActionBarAppVersionOverride(String original) {
-        return FIX_VIDEO_ACTION_BAR
-                ? "20.13.41"
-                : original;
+        return Logger.traceOverride("RestoreOldVideoActionBarPatch.getVideoActionBarAppVersionOverride", original,
+                FIX_VIDEO_ACTION_BAR
+                        ? "20.13.41"
+                        : original);
     }
 
     /**
@@ -698,9 +699,9 @@ public class RestoreOldVideoActionBarPatch {
         if (FIX_VIDEO_ACTION_BAR
                 && !Settings.INNERTUBE_COLD_CONFIG_DATA.isSetToDefault()
                 && !Settings.INNERTUBE_COLD_HASH_DATA.isSetToDefault()) {
-            return false;
+            return Logger.traceOverride("RestoreOldVideoActionBarPatch.fixRelatedVideoOverlay", original, false);
         }
 
-        return original;
+        return Logger.traceOverride("RestoreOldVideoActionBarPatch.fixRelatedVideoOverlay", original, original);
     }
 }

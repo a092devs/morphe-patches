@@ -2,6 +2,7 @@ package app.morphe.extension.youtube.patches;
 
 import android.os.PowerManager;
 
+import app.morphe.extension.shared.Logger;
 import app.morphe.extension.youtube.settings.Settings;
 
 @SuppressWarnings("unused")
@@ -24,17 +25,17 @@ public final class AmbientModePatch {
      * Disable Ambient mode.
      */
     public static boolean disableAmbientMode(boolean original) {
-        return !Settings.DISABLE_AMBIENT_MODE.get() && original;
+        return Logger.traceOverride("AmbientModePatch.disableAmbientMode", original,
+                !Settings.DISABLE_AMBIENT_MODE.get() && original);
     }
 
     /**
      * Injection point for fullscreen background color.
      */
     public static int getFullScreenBackgroundColor(int originalColor) {
-        if (Settings.DISABLE_FULLSCREEN_AMBIENT_MODE.get()) {
-            return DIVIDER_ATTRIBUTES_COLOR_SYSTEM_DEFAULT;
-        }
-
-        return originalColor;
+        return Logger.traceOverride("AmbientModePatch.getFullScreenBackgroundColor", originalColor,
+                Settings.DISABLE_FULLSCREEN_AMBIENT_MODE.get()
+                        ? DIVIDER_ATTRIBUTES_COLOR_SYSTEM_DEFAULT
+                        : originalColor);
     }
 }
