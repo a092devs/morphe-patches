@@ -537,6 +537,10 @@ Reports are public and are reviewed before a channel is added to a list. Removal
     <string name="morphe_on_the_go_summary">Player flyout \'on-the-go\' opens Morphe custom player controls</string>
     <!-- 'On-the-go' should be translated using the same localized wording YouTube displays for the menu item. -->
     <string name="morphe_on_the_go_panel_title">On-the-go</string>
+    <string name="morphe_on_the_go_audio_mode">Switch to audio mode</string>
+    <string name="morphe_on_the_go_video_mode">Switch to video mode</string>
+    <string name="morphe_on_the_go_download">Download</string>
+    <string name="morphe_on_the_go_queue">Queue</string>
 
     <!-- interaction.ask.askFlyoutMenuPatch -->
     <string name="morphe_ask_summarize_flyout_menu_title">Add Ask item to flyout menu</string>
@@ -813,6 +817,8 @@ Info: May not work on live streams"</string>
     <string name="morphe_queue_manager_save_queue">Save queue to playlist</string>
 
     <!-- interaction.nativeplaylistqueue.nativePlaylistQueuePatch -->
+    <string name="morphe_native_queue_fetch_on_scroll_title">Load queue pages on scroll</string>
+    <string name="morphe_native_queue_fetch_on_scroll_summary">Loads more playlist videos when scrolling near the end of the queue</string>
     <string name="morphe_native_playlist_queue_saved">Playlist saved</string>
     <string name="morphe_native_playlist_queue_saved_to">Saved to %s</string>
     <string name="morphe_native_playlist_queue_clear">Clear queue</string>
@@ -1188,6 +1194,10 @@ To show the \'Audio Track\' menu, change \'Spoof video streams\' to any client e
     <string name="morphe_bypass_ambient_mode_restrictions_summary">Allows Ambient mode to stay active in battery saver mode</string>
     <string name="morphe_disable_ambient_mode_title">Disable Ambient mode</string>
     <string name="morphe_disable_fullscreen_ambient_mode_title">Disable Ambient mode in fullscreen</string>
+    <string name="morphe_enhanced_ambient_mode_title">Enhanced Ambient mode</string>
+    <string name="morphe_enhanced_ambient_mode_summary">Lights the whole watch page and black bars with the video, in place of Ambient mode</string>
+    <string name="morphe_enhanced_ambient_mode_readable_text_title">Keep text readable</string>
+    <string name="morphe_enhanced_ambient_mode_readable_text_summary">Dims the light on bright videos so the text on the page stays readable</string>
 
     <!-- layout.hide.infocards.hideInfocardsPatch -->
     <string name="morphe_hide_info_cards_title">Hide info cards</string>
@@ -1982,6 +1992,8 @@ Automatic recording is optional. It stops in incognito or when the account chang
     <string name="morphe_niconico_comments_timed_comments_summary">On videos without a chat, top comments that contain a time such as 1:23 are shown at that time</string>
     <string name="morphe_niconico_comments_timed_comments_with_replay_title">Show timed comments with chat replay</string>
     <string name="morphe_niconico_comments_timed_comments_with_replay_summary">On replays of live streams and Premieres, timed comments are also shown with the chat</string>
+    <string name="morphe_niconico_comments_all_settings">All settings</string>
+    <string name="morphe_niconico_comments_reset_title">Reset these settings?</string>
 
     <string name="morphe_live_chat_translate_screen_title">Live chat translation</string>
     <string name="morphe_live_chat_translate_screen_summary">Translate live chat and live chat replay messages</string>
