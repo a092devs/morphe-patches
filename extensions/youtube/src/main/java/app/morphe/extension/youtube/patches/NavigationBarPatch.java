@@ -637,7 +637,7 @@ public final class NavigationBarPatch {
                     if (translucentNavigationBarForced && navigationBar instanceof PivotBarAccess access) {
                         final int room = systemButtonsRoom;
                         view.post(() -> {
-                            final int navigationBarRoom = YouTubeGlassNavigationBar.getFloatingRoom(
+                            final int navigationBarRoom = YouTubeGlassNavigationBar.getFloatingRoom(navigationBar, room);
                             access.patch_setSystemButtonsRoom(navigationBarRoom);
                             YouTubeGlassNavigationBar.setAppRoom(navigationBarRoom);
                             navigationBar.setPadding(navigationBar.getPaddingLeft(), navigationBar.getPaddingTop(),
