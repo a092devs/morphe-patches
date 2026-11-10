@@ -262,14 +262,14 @@ public final class AdsFilter extends Filter {
      * Injection point.
      */
     public static boolean hideAds(boolean original) {
-        return original;
+        return (Settings.HIDE_GENERAL_ADS.get() && blockVideoAdsInRequests()) || original;
     }
 
     /**
      * Injection point.
      */
     public static String hideAds(String osName) {
-        return osName;
+        return SpoofOSNamePatch.getOSName(Settings.HIDE_GENERAL_ADS.get());
     }
 
     /**
@@ -366,7 +366,7 @@ public final class AdsFilter extends Filter {
      * Injection point.
      */
     public static String hideVideoAds(String osName) {
-        return osName;
+        return SpoofOSNamePatch.getOSName(blockVideoAdsInRequests());
     }
 
     /**
@@ -382,6 +382,10 @@ public final class AdsFilter extends Filter {
      * Injection point.
      */
     public static String overrideGuideOSName(String osName) {
-        return osName;
+        if (NavigationBarPatch.isPatchIncluded()) {
+            return osName;
+        }
+
+        return SpoofOSNamePatch.getOSName(false);
     }
 }
