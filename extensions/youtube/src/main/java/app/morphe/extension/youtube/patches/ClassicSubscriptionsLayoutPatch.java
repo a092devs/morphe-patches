@@ -173,6 +173,12 @@ public final class ClassicSubscriptionsLayoutPatch {
     @Nullable
     private static PivotBarItemRenderer getPivotBarItemRenderer(Object pivotBarItem) {
         try {
+            if (pivotBarItem instanceof PivotBarItemInterface renderInterface) {
+                MessageLite messageLite = renderInterface.patch_getPivotBarItemRenderer();
+                if (messageLite != null) {
+                    return PivotBarItemRenderer.parseFrom(messageLite.toByteArray());
+                }
+            }
             return NavigationBarPatchKt.getPivotBarItemRenderer(pivotBarItem);
         } catch (Exception ex) {
             Logger.printException(() -> "Failed to parse PivotBarItemRenderer", ex);
