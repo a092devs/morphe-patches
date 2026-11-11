@@ -344,7 +344,7 @@ public final class AdsFilter extends Filter {
      * so they are not ads of a whitelisted channel.
      */
     public static String hideShortsAds(String osName) {
-        return osName;
+        return SpoofOSNamePatch.getOSName(Settings.HIDE_VIDEO_ADS.get());
     }
 
     /**
