@@ -10,8 +10,24 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check_auth.outputs.configured }}
     steps:
+      - name: Check Crowdin credentials
+        id: check_auth
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+        run: |
+          if [ -z "$CROWDIN_PROJECT_ID" ] || [ -z "$CROWDIN_PERSONAL_TOKEN" ]; then
+            echo "Crowdin credentials (CROWDIN_PROJECT_ID, CROWDIN_PERSONAL_TOKEN) are not configured. Skipping Crowdin operations."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout dev
+        if: steps.check_auth.outputs.configured == 'true'
         uses: actions/checkout@v7
         with:
           ref: dev
@@ -19,9 +35,11 @@ jobs:
           clean: true
 
       - name: Reset Crowdin branch
+        if: steps.check_auth.outputs.configured == 'true'
         run: git push origin dev:crowdin --force
 
       - name: Pull strings from Crowdin
+        if: steps.check_auth.outputs.configured == 'true'
         uses: crowdin/github-action@v3
         with:
           config: crowdin.yml
@@ -37,7 +55,7 @@ jobs:
 
   merge:
     name: Squash merge Crowdin into Dev
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && needs.pull.outputs.configured == 'true'
     needs: pull
     permissions:
       contents: write
