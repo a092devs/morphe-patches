@@ -299,14 +299,41 @@ public class StreamingDataRequest {
         return videoId;
     }
 
+    public interface FetchGate {
+        /**
+         * Runs off the main thread before a video's streams are fetched for playback,
+         * can block to delay the start.
+         */
+        void beforeFetch(String videoId);
+    }
+
+    @Nullable
+    private static volatile FetchGate fetchGate;
+
+    public static void setFetchGate(@Nullable FetchGate gate) {
+        fetchGate = gate;
+    }
+
+    private static void passFetchGate(String videoId) {
+        FetchGate gate = fetchGate;
+        if (gate == null) return;
+        try {
+            gate.beforeFetch(videoId);
+        } catch (Exception ex) {
+            Logger.printException(() -> "passFetchGate failure", ex);
+        }
+    }
+
     private StreamingDataRequest(String videoId, Map<String, String> playerHeaders,
                                  boolean includeVideoDetails, ClientType[] clientOrder, boolean isDownload) {
         this.videoId = videoId;
         this.authorization = playerHeaders.get(AUTHORIZATION_HEADER);
         this.clientOrder = clientOrder;
-        this.future = Utils.submitOnBackgroundThread(
-                () -> fetch(resolveVideoIdToFetch(videoId), playerHeaders, includeVideoDetails,
-                        clientOrder, isDownload));
+        this.future = Utils.submitOnBackgroundThread(() -> {
+            if (!isDownload) passFetchGate(videoId);
+            return fetch(resolveVideoIdToFetch(videoId), playerHeaders, includeVideoDetails,
+                    clientOrder, isDownload);
+        });
     }
 
     /**
@@ -679,12 +706,28 @@ public class StreamingDataRequest {
      * and it buffers as the player of the client app does, which can start a video later
      * (such as after 2.5 seconds of media, instead of 1.6 seconds with the app player config).
      *
-     * @return The player config with how the app player config plays the video inline and buffers it.
+     * The quality menu belongs to the app, so the app player config also tells if the quality selected
+     * in the quality menu is used only for the video it was selected for. Without it, the quality selected
+     * is also used for the next videos.
+     *
+     * @param hasAndroidMedia If the streams are the streams of an Android client,
+     *                        so the app player config tells how to play them inline and how to buffer them.
+     * @return The player config with how the app player config plays the video inline, buffers it,
+     *         and uses the quality selected in the quality menu.
      */
-    public static byte[] addAppPlayerConfig(byte[] playerConfig, byte[] appPlayerConfig) {
+    public static byte[] addAppPlayerConfig(byte[] playerConfig, byte[] appPlayerConfig, boolean hasAndroidMedia) {
         try {
             PlayerConfig appConfig = PlayerConfig.parseFrom(appPlayerConfig);
             PlayerConfig.Builder builder = PlayerConfig.parseFrom(playerConfig).toBuilder();
+
+            if (appConfig.hasStickyQualitySelectionConfig()) {
+                builder.setStickyQualitySelectionConfig(appConfig.getStickyQualitySelectionConfig());
+            } else {
+                builder.clearStickyQualitySelectionConfig();
+            }
+            if (!hasAndroidMedia) {
+                return builder.build().toByteArray();
+            }
 
             if (appConfig.getAudioConfig().getMuteOnStart()) {
                 builder.setAudioConfig(builder.getAudioConfig().toBuilder().setMuteOnStart(true));

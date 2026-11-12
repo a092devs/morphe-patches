@@ -319,9 +319,9 @@ Els canvis inclouen:
   <string name="morphe_hide_keyword_content_search_title">Amagar resultats de cerca per paraules clau</string>
   <string name="morphe_hide_keyword_content_subscriptions_title">Amagar vídeos de Subscripcions per paraules clau</string>
   <string name="morphe_hide_keyword_content_phrases_title">Paraules clau per ocultar</string>
-  <string name="morphe_hide_keyword_content_phrases_summary">"Introduïu paraules clau i frases per ocultar, separades per salts de línia
+  <string name="morphe_hide_keyword_content_phrases_summary">"Introduïu paraules clau i frases per ocultar, separades per noves línies
 
-Les paraules clau poden ser qualsevol text que aparegui als títols dels vídeos o als noms dels canals"</string>
+Les paraules clau poden ser qualsevol text que aparegui als títols dels vídeos. La paraula clau @NomDUsuari oculta tot el contingut de creadors específics"</string>
   <string name="morphe_hide_keyword_content_about_summary">"Inici / Subscripcions / Cerca / Comentaris es filtren per ocultar el contingut que coincideix amb les frases de paraules clau
 
 Limitacions:
@@ -331,7 +331,6 @@ Limitacions:
   <!-- Translations must use a localized example. For languages that do not use spaces between words (Chinese, Japanese, etc.) the English AI example should be used since no localized examples exist. Or if using machine translations, or if nobody wants to think of a localized example, then the English 'ai' example should be left as-is. -->
   <string name="morphe_hide_keyword_content_about_whole_words_summary">Envolir una paraula clau/frase amb cometes evitarà coincidències parcials dels títols dels vídeos i dels noms dels canals&lt;br&gt;&lt;br&gt;Per exemple,&lt;br&gt;&lt;b&gt;\"ai\"&lt;/b&gt; ocultarà el vídeo: &lt;b&gt;How does AI work?&lt;/b&gt;&lt;br&gt;però no ocultarà: &lt;b&gt;What does fair use mean?&lt;/b&gt;</string>
   <!-- Translations of this should not be longer than the original English text, otherwise the text can be clipped and not entirely shown. -->
-  <string name="morphe_hide_keyword_toast_invalid_conflicting">La paraula clau té declaracions contradictòries: %s</string>
   <string name="morphe_hide_keyword_toast_invalid_length">La paraula clau és massa curta i requereix cometes: %s</string>
   <string name="morphe_hide_keyword_toast_invalid_broad">La paraula clau ocultarà tots els vídeos: %s</string>
   <string name="morphe_hide_keyword_content_stats_hidden_breakdown">"• Inici: %1$s
@@ -559,18 +558,11 @@ Un cop s'ha obert un vídeo amb el botó Ask, la funció funciona amb tots els v
   <string name="morphe_export_download_folder_summary">"Exporta els vídeos descarregats dins de l'app a l'emmagatzematge del teu dispositiu mitjançant el menú desplegable de descàrregues de l'app. Toqueu per canviar la carpeta d'exportació
 
 Carpeta d'exportació: %s"</string>
-  <string name="morphe_export_download_folder_dialog_title">Carpeta d\'exportació</string>
-  <string name="morphe_export_download_folder_change">Canvia la carpeta</string>
-  <string name="morphe_export_download_folder_changed">Carpeta d\'exportació canviada</string>
-  <string name="morphe_export_download_folder_reset">Carpeta d\'exportació restablerta</string>
-  <string name="morphe_export_download_folder_missing">No s\'ha pogut trobar la carpeta d\'exportació %s</string>
-  <string name="morphe_export_download_flyout_title">Exporta al dispositiu</string>
   <string name="morphe_export_download_started">Exportant el vídeo</string>
   <string name="morphe_export_download_progress">Exportant el vídeo: %s%%</string>
   <string name="morphe_export_download_notification_channel">Exportacions de vídeos</string>
   <string name="morphe_export_download_saved">Vídeo exportat a %s</string>
   <string name="morphe_export_download_failed">No s\'ha pogut exportar el vídeo</string>
-  <string name="morphe_export_download_canceled">Exportació cancel·lada</string>
   <!-- video.voiceovertranslation.voiceOverTranslationPatch -->
   <string name="morphe_vot_screen_title">Traducció de veu en off</string>
   <string name="morphe_vot_screen_summary">Llegeix els subtítols del vídeo en veu alta mitjançant el text a veu del dispositiu, sincronitzat amb la reproducció</string>
@@ -648,6 +640,24 @@ La teva clau API mai s'ha de compartir. Qualsevol persona amb accés a ella pot 
   <string name="morphe_loop_video_range_clear">Esborra</string>
   <string name="morphe_loop_video_range_toast_on">Repetint %1$s - %2$s</string>
   <string name="morphe_loop_video_range_invalid_time">Interval de temps no vàlid</string>
+  <!-- interaction.loop.loopCountPatch -->
+  <string name="morphe_loop_count_screen_title">Nombre de bucles</string>
+  <string name="morphe_loop_count_screen_summary">Tria quantes vegades es repeteix un vídeo abans del següent vídeo</string>
+  <string name="morphe_loop_count_title">Habilita el comptador de bucles</string>
+  <string name="morphe_loop_count_summary">El menú Més del reproductor mostra el Compte de bucles al costat de Bucle de vídeo, per triar quantes vegades es reprodua el vídeo abans del següent vídeo</string>
+  <string name="morphe_loop_count_playlists_title">Desar l\'estat dels bucles a les llistes de reproducció</string>
+  <string name="morphe_loop_count_playlists_summary">Cada vídeo d\'una llista de reproducció manté el compte de bucles que trieu, i Bucle de vídeo s\'activa quan la llista de reproducció el torna a reproduire. Si està desactivat, el compte de bucles és només per al vídeo que s\'està reproduint ara</string>
+  <string name="morphe_loop_count_clear_title">Esborrar els comptes de bucles desats</string>
+  <string name="morphe_loop_count_clear_summary">Oblida els comptes de bucles desats a les teves llistes de reproducció. Vídeos desats: %s</string>
+  <string name="morphe_loop_count_clear_summary_none">No hi ha comptes de bucles desats</string>
+  <string name="morphe_loop_count_clear_dialog_title">Esborrar els comptes de bucles desats?</string>
+  <string name="morphe_loop_count_clear_dialog_message">Els vídeos de les teves llistes de reproducció obliden el seu compte de bucles, i Bucle de vídeo ja no s\'activa quan una llista de reproducció els reprodueix</string>
+  <string name="morphe_loop_count_clear_done">Comptes de bucles desats esborrats</string>
+  <string name="morphe_loop_count_flyout_name">Nombre de bucles</string>
+  <string name="morphe_loop_count_dialog_message">Quantes vegades es reprodua el vídeo abans del següent vídeo, de %1$s a %2$s. Deixa\'ho buit per repetir el vídeo sense límit.</string>
+  <string name="morphe_loop_count_no_limit">Sense límit</string>
+  <string name="morphe_loop_count_decrease">Menys vegades</string>
+  <string name="morphe_loop_count_increase">Més vegades</string>
   <!-- interaction.pictureinpicture.pictureinPictureButtonPatch -->
   <string name="morphe_pip_button_overlay_title">Mostrar el botó de Picture-in-Picture</string>
   <string name="morphe_pip_button_flyout_title">Mostrar el menú de Picture-in-Picture</string>
@@ -710,8 +720,6 @@ Info: Potser no funcioni en les retransmissions en directe"</string>
   <string name="morphe_queue_type_entry_2">Cua nativa</string>
   <string name="morphe_queue_type_entry_3">Cua de Morphe</string>
   <string name="morphe_queue_type_entry_4">Cua de Morphe del costat del client</string>
-  <string name="morphe_queue_add_flyout_menu_title">Afegeix l\'element del menú desplegable de la cua del feed</string>
-  <string name="morphe_queue_add_flyout_menu_summary">Afegeix un element desplegable addicional. Activa-ho si no apareix \"Afegeix a la cua\"</string>
   <string name="morphe_local_queue_sheet_title">Cua</string>
   <string name="morphe_local_queue_open">Cua (%s)</string>
   <string name="morphe_local_queue_clear">Esborra-ho tot</string>
@@ -1113,6 +1121,10 @@ Per mostrar el menú 'Audio Track', canvia 'Spoof video streams' a qualsevol cli
   <string name="morphe_enhanced_ambient_mode_summary">Il·lumina tota la pàgina de visionat i les barres negres amb el vídeo, en lloc del mode Ambient</string>
   <string name="morphe_enhanced_ambient_mode_readable_text_title">Mantenir el text llegible</string>
   <string name="morphe_enhanced_ambient_mode_readable_text_summary">Atenueix la llum en els vídeos lluminosos perquè el text de la pàgina segueixi sent llegible</string>
+  <string name="morphe_enhanced_ambient_mode_dim_while_scrolling_title">Atenuar mentre es desplaça</string>
+  <string name="morphe_enhanced_ambient_mode_dim_while_scrolling_summary">Atenua la llum mentre es desplaça o es toca la pàgina</string>
+  <string name="morphe_enhanced_ambient_mode_dim_duration_title">Durada de l\'atenuació</string>
+  <string name="morphe_enhanced_ambient_mode_dim_duration_summary">Quant de temps es manté la llum atenuada després que s\'atura el desplaçament. Amb 0, només el desplaçament atenua la llum, i aquesta torna a la normalitat tan bon punt s\'atura el desplaçament</string>
   <!-- layout.hide.infocards.hideInfocardsPatch -->
   <string name="morphe_hide_info_cards_title">Ocultar les targetes d\'informació</string>
   <!-- layout.hide.rollingnumber.disableRollingNumberAnimationPatch -->
@@ -1133,6 +1145,7 @@ Per mostrar el menú 'Audio Track', canvia 'Spoof video streams' a qualsevol cli
   <string name="morphe_hide_shorts_subscriptions_title">Amagar al feed de Subscripcions</string>
   <string name="morphe_hide_shorts_video_description_title">Amagar a la descripció del vídeo</string>
   <string name="morphe_hide_shorts_history_title">Amagar a l\'historial de reproducció</string>
+  <string name="morphe_hide_shorts_notifications_title">Ocultar a les notificacions push</string>
   <string name="morphe_shorts_player_screen_title">Reproductor de Shorts</string>
   <string name="morphe_shorts_player_screen_summary">Tria quins components apareixen al reproductor de Shorts</string>
   <string name="morphe_disable_shorts_double_tap_to_like_title">Desactivar el toc doble per a M\'agrada</string>
@@ -1439,7 +1452,7 @@ Disseny d'automoció
   <string name="morphe_dearrow_titles_player_title">Llistes de reproducció &amp; recomanacions del reproductor</string>
   <string name="morphe_dearrow_titles_search_title">Resultats de la cerca</string>
   <string name="morphe_dearrow_titles_icon_title">Mostrar la icona de DeArrow</string>
-  <string name="morphe_dearrow_titles_icon_summary">Mostra la icona de DeArrow als títols de vídeos col·laboratius</string>
+  <string name="morphe_dearrow_titles_icon_summary">Mostra la icona de DeArrow als títols de vídeos basats en crowdsourcing. Toca la icona per mostrar el títol i la miniatura originals</string>
   <string name="morphe_dearrow_casual_mode_title">Mode casual</string>
   <string name="morphe_dearrow_casual_mode_summary">Mostra el títol original en lloc del títol de DeArrow si els usuaris de DeArrow han votat que els agrada el títol original</string>
   <string name="morphe_dearrow_casual_mode_min_votes_title">Vots casuals mínims per mostrar el títol original</string>
@@ -1615,6 +1628,9 @@ La reproducció de vídeos amb AV1 pot tenir talls o pèrdues de fotogrames"</st
   <string name="morphe_spoof_video_streams_about_no_stable_volume">• El volum estable no està disponible</string>
   <string name="morphe_spoof_video_streams_about_end_early">• La reproducció pot acabar 1 segon abans</string>
   <string name="morphe_spoof_video_streams_about_js">• Si la desobfuscació falla, la reproducció podria fallar</string>
+  <!-- "Android System WebView" is the name of the Android app and should not be translated. -->
+  <string name="morphe_spoof_video_streams_about_webview_missing">• Android System WebView està desactivat o no està instal·lat. Activa\'l i actualitza\'l, o la reproducció podria fallar</string>
+  <string name="morphe_spoof_video_streams_about_webview_outdated">• Android System WebView està desactualitzat. Actualitza\'l, o la reproducció podria fallar</string>
   <!-- "Force original audio" should match the language used in 'morphe_force_original_audio_title'. -->
   <string name="morphe_spoof_video_streams_about_no_force_original_audio">• Forçar l\'àudio original no està disponible</string>
   <string name="morphe_spoof_video_streams_about_sign_in_to_vr_required">• Cal iniciar sessió a Android VR</string>

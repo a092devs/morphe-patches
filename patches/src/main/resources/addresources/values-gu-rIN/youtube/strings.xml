@@ -83,6 +83,7 @@ Second \"item\" text"</string>
   <!-- interaction.playlist.playlistPatch -->
   <!-- interaction.loop.loopVideoPatch -->
   <!-- interaction.loop.loopVideoButtonPatch -->
+  <!-- interaction.loop.loopCountPatch -->
   <!-- interaction.pictureinpicture.pictureinPictureButtonPatch -->
   <!-- interaction.pictureinpicture.changePipActionsPatch -->
   <string name="morphe_pip_action_entry_default">ડિફૉલ્ટ</string>
@@ -236,6 +237,7 @@ Second \"item\" text"</string>
   <!-- video.quality.hidePremiumVideoQualityPatch -->
   <!-- video.quality.prioritizeVideoQualityPatch -->
   <!-- misc.spoof.spoofVideoStreamsPatch -->
+  <!-- "Android System WebView" is the name of the Android app and should not be translated. -->
   <!-- "Force original audio" should match the language used in 'morphe_force_original_audio_title'. -->
   <!-- Quality refers to video quality -->
   <!-- misc.fix.videoactionbar.restoreOldVideoActionBarPatch -->

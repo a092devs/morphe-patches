@@ -47,6 +47,7 @@ import app.morphe.patches.shared.misc.settings.preference.PreferenceScreenPrefer
 import app.morphe.patches.shared.misc.settings.preference.PreferenceScreenPreference.Sorting
 import app.morphe.patches.shared.misc.settings.preference.SwitchPreference
 import app.morphe.patches.shared.misc.settings.preference.TextPreference
+import app.morphe.patches.shared.misc.settings.preference.noTitleUnsortedPreferenceCategory
 import app.morphe.patches.shared.misc.settings.settingsPatch
 import app.morphe.patches.youtube.misc.settings.modifyActivityForSettingsInjection
 import app.morphe.util.ResourceGroup
@@ -175,10 +176,17 @@ val settingsPatch = patch(
         )
 
         PreferenceScreen.MISC.addPreferences(
-            NonInteractivePreference(
-                key = "morphe_settings_new_indicator_days",
-                tag = "app.morphe.extension.shared.settings.preference.SeekBarPreference",
-                selectable = true
+            noTitleUnsortedPreferenceCategory(
+                NonInteractivePreference(
+                    key = "morphe_settings_new_indicator_days",
+                    tag = "app.morphe.extension.shared.settings.preference.SeekBarPreference",
+                    selectable = true
+                ),
+                NonInteractivePreference(
+                    key = "morphe_settings_new_indicator_clear",
+                    tag = "app.morphe.extension.shared.settings.preference.ClearNewSettingsIndicatorPreference",
+                    selectable = true
+                )
             ),
             TextPreference(
                 key = null,
@@ -272,6 +280,25 @@ fun newIntent(settingsName: String) = IntentPreference.Intent(
 }
 
 object PreferenceScreen : BasePreferenceScreen() {
+    private val miniplayerPreferences = mutableSetOf<BasePreference>()
+
+    /**
+     * Adds preferences to the Miniplayer screen of the Player screen,
+     * which is added with the first preferences.
+     */
+    fun addMiniplayerPreferences(vararg preferences: BasePreference) {
+        if (miniplayerPreferences.isEmpty()) {
+            PLAYER.addPreferences(
+                PreferenceScreenPreference(
+                    key = "morphe_music_miniplayer_screen",
+                    sorting = Sorting.UNSORTED,
+                    preferences = miniplayerPreferences,
+                )
+            )
+        }
+        miniplayerPreferences.addAll(preferences)
+    }
+
     val ADS = Screen(
         key = "morphe_settings_music_screen_1_ads",
         summaryKey = null,

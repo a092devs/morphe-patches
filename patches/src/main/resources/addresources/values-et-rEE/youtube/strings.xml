@@ -319,9 +319,9 @@ Muudatused hõlmavad:
   <string name="morphe_hide_keyword_content_search_title">Peida otsingutulemusi märksõnade põhjal</string>
   <string name="morphe_hide_keyword_content_subscriptions_title">Peida Tellimuste videoid märksõnade põhjal</string>
   <string name="morphe_hide_keyword_content_phrases_title">Peidetavad märksõnad</string>
-  <string name="morphe_hide_keyword_content_phrases_summary">"Sisestage peidetavad märksõnad ja fraasid, eraldades need uue rea abil
+  <string name="morphe_hide_keyword_content_phrases_summary">"Sisestage peidetavaks soovitud märksõnad ja fraasid, eraldades need uue rea abil
 
-Märksõnad võivad olla suvaline tekst, mis kuvatakse videote pealkirjades või kanalite nimedes"</string>
+Märksõnades võib olla ükskõik milline videote pealkirjades kuvatav tekst. Märksõna @Kasutajanimi peidab kogu sisu konkreetsetelt loojatelt"</string>
   <string name="morphe_hide_keyword_content_about_summary">"Avaleht / Tellimused / Otsing / Kommentaarid on filtreeritud, et peita sisu, mis vastab märksõnafraasidele
 
 Piirangud:
@@ -331,7 +331,6 @@ Piirangud:
   <!-- Translations must use a localized example. For languages that do not use spaces between words (Chinese, Japanese, etc.) the English AI example should be used since no localized examples exist. Or if using machine translations, or if nobody wants to think of a localized example, then the English 'ai' example should be left as-is. -->
   <string name="morphe_hide_keyword_content_about_whole_words_summary">Märksõna või fraasi jutumärkidesse panemine takistab osaliste vastete leidmist videote pealkirjades ja kanalite nimedes&lt;br&gt;&lt;br&gt;Näiteks,&lt;br&gt;&lt;b&gt;\"ai\"&lt;/b&gt; peidab video: &lt;b&gt;Kuidas tehisintellekt töötab?&lt;/b&gt;&lt;br&gt;kuid ei peida video: &lt;b&gt;Mida tähendab õiglane kasutamine?&lt;/b&gt;</string>
   <!-- Translations of this should not be longer than the original English text, otherwise the text can be clipped and not entirely shown. -->
-  <string name="morphe_hide_keyword_toast_invalid_conflicting">Märksõnal on vastupidised deklaratsioonid: %s</string>
   <string name="morphe_hide_keyword_toast_invalid_length">Märksõna on liiga lühike ja vajab tsitaadimärke: %s</string>
   <string name="morphe_hide_keyword_toast_invalid_broad">Märksõna peidab kõik videod: %s</string>
   <string name="morphe_hide_keyword_content_stats_hidden_breakdown">"• Avaleht: %1$s
@@ -559,18 +558,11 @@ Kui video, millel on nupp Küsige, on üks kord avatud, töötab see funktsioon 
   <string name="morphe_export_download_folder_summary">"Eksportige rakenduses salvestatud videod oma seadme mällu, kasutades rakendusesse integreeritud allalaadimiste menüüd. Ekspordikausta muutmiseks puudutage seda
 
 Ekspordikaust: %s"</string>
-  <string name="morphe_export_download_folder_dialog_title">Ekspordikaust</string>
-  <string name="morphe_export_download_folder_change">Muuda kaust</string>
-  <string name="morphe_export_download_folder_changed">Ekspordikaust on muudetud</string>
-  <string name="morphe_export_download_folder_reset">Ekspordikaust lähtestatud</string>
-  <string name="morphe_export_download_folder_missing">Eksportkausta %s ei leitud</string>
-  <string name="morphe_export_download_flyout_title">Ekspordi seadmesse</string>
   <string name="morphe_export_download_started">Video eksportimine</string>
   <string name="morphe_export_download_progress">Video eksportimine: %s%%</string>
   <string name="morphe_export_download_notification_channel">Videote eksportimine</string>
   <string name="morphe_export_download_saved">Video eksporditi asukohta %s</string>
   <string name="morphe_export_download_failed">Video eksportimine ebaõnnestus</string>
-  <string name="morphe_export_download_canceled">Eksportimine tühistati</string>
   <!-- video.voiceovertranslation.voiceOverTranslationPatch -->
   <string name="morphe_vot_screen_title">Hääletõlge</string>
   <string name="morphe_vot_screen_summary">Loetakse video altekirju koosal seadme tekst-kõne funktsiooni abil, sünkroonides need esitusega</string>
@@ -648,6 +640,25 @@ Teie API võtit ei tohi kunagi jagada. Kõik, kellel on sellele juurdepääs, sa
   <string name="morphe_loop_video_range_clear">Tühjenda</string>
   <string name="morphe_loop_video_range_toast_on">Korduv: %1$s - %2$s</string>
   <string name="morphe_loop_video_range_invalid_time">Kehtetu ajavahemik</string>
+  <!-- interaction.loop.loopCountPatch -->
+  <string name="morphe_loop_count_screen_title">Korduste arv</string>
+  <string name="morphe_loop_count_screen_summary">Valige, mitu korda video kordub enne järgmise video algust</string>
+  <string name="morphe_loop_count_title">Luba korduste arvu määramine</string>
+  <string name="morphe_loop_count_summary">Playeri lisamenüüs kuvatakse üksuse \"Loop video\" kõrval korduste arv, et valida, mitu korda video esitatakse enne järgmise videot</string>
+  <string name="morphe_loop_count_playlists_title">Salvesta tsüklite arv plaalistesse</string>
+  <string name="morphe_loop_count_playlists_summary">Iga plaalisti video säilitab teie poolt valitud tsüklite arvu ja \"Korda videot\" lülitub sisse, kui plaalist mängib seda uuesti. Kui see on välja lülitatud, kegustib tsüklite arv ainult praegu mängitava video kohta</string>
+  <string name="morphe_loop_count_clear_title">Tõrge salvestatud tsüklite arvud</string>
+  <string name="morphe_loop_count_clear_summary">Unusta teie plaalistesse salvestatud tsüklite arvud. Salvestatud videod: %s</string>
+  <string name="morphe_loop_count_clear_summary_none">Tsüklite arveid ei ole salvestatud</string>
+  <string name="morphe_loop_count_clear_dialog_title">Tõrgata salvestatud tsüklite arvud?</string>
+  <string name="morphe_loop_count_clear_dialog_message">Teie plaalistite videod unustavad oma tsüklite arvu ja \"Korda videot\" ei lülitu enam sisse, kui plaalist neid mängib</string>
+  <string name="morphe_loop_count_clear_done">Salvestatud tsüklite arvud tõrgatud</string>
+  <string name="morphe_loop_count_flyout_name">Kordustuste arv</string>
+  <string name="morphe_loop_count_dialog_message">Kui palju kordi video esitatakse enne järgmise videot, vahemikus %1$s kuni %2$s. Jätke väli tühjaks, et video korduks piiramatult.</string>
+  <string name="morphe_loop_count_times">%s korda</string>
+  <string name="morphe_loop_count_no_limit">Piiramatult</string>
+  <string name="morphe_loop_count_decrease">Vähem kordi</string>
+  <string name="morphe_loop_count_increase">Rohkem kordi</string>
   <!-- interaction.pictureinpicture.pictureinPictureButtonPatch -->
   <string name="morphe_pip_button_overlay_title">Kuva pildis-pilt nupp</string>
   <string name="morphe_pip_button_flyout_title">Kuva pildis-pilt menüü</string>
@@ -710,8 +721,6 @@ Info: Ei pruugi töötada võttesaadete puhul"</string>
   <string name="morphe_queue_type_entry_2">Kohalik järjekord</string>
   <string name="morphe_queue_type_entry_3">Morphe järjekord</string>
   <string name="morphe_queue_type_entry_4">Morphe\'i kliendipoolne järjekord</string>
-  <string name="morphe_queue_add_flyout_menu_title">Lisa voo hüpikmenüü järjekorra üksus</string>
-  <string name="morphe_queue_add_flyout_menu_summary">Lisab täiendava hüpikmenüü üksuse. Aktiveeri see, kui \"Lisa järjekorda\" ei kuvata</string>
   <string name="morphe_local_queue_sheet_title">Järjekord</string>
   <string name="morphe_local_queue_open">Järjekord (%s)</string>
   <string name="morphe_local_queue_clear">Tühjenda kõik</string>
@@ -1113,6 +1122,10 @@ Menüü \"Audio Track\" kuvamiseks muutke \"Videovoogude imiteerimine\" suvalise
   <string name="morphe_enhanced_ambient_mode_summary">Valgustab kogu vaatamislehte ja musti ribasid koos videoga, asendades Ümbritseva režiimi</string>
   <string name="morphe_enhanced_ambient_mode_readable_text_title">Hoidke tekst loetavana</string>
   <string name="morphe_enhanced_ambient_mode_readable_text_summary">Hääldab heledate videote valgust, et lehel olev tekst püsiks loetavana</string>
+  <string name="morphe_enhanced_ambient_mode_dim_while_scrolling_title">Hägusta skrollimise ajal</string>
+  <string name="morphe_enhanced_ambient_mode_dim_while_scrolling_summary">Hägustab valgust, kui lehte skrollitakse või puudutatakse</string>
+  <string name="morphe_enhanced_ambient_mode_dim_duration_title">Hägustamise kestus</string>
+  <string name="morphe_enhanced_ambient_mode_dim_duration_summary">Kui kaua jääb valgust hägustatud pärast skrollimise lõppemist. Vääituse 0 korral hägustab valgust ainult skrollimine ja see taastub kohe pärast skrollimise lõppemist</string>
   <!-- layout.hide.infocards.hideInfocardsPatch -->
   <string name="morphe_hide_info_cards_title">Peida infokaardid</string>
   <!-- layout.hide.rollingnumber.disableRollingNumberAnimationPatch -->
@@ -1133,6 +1146,7 @@ Menüü \"Audio Track\" kuvamiseks muutke \"Videovoogude imiteerimine\" suvalise
   <string name="morphe_hide_shorts_subscriptions_title">Peida Tellimuste voos</string>
   <string name="morphe_hide_shorts_video_description_title">Peida video kirjeldusest</string>
   <string name="morphe_hide_shorts_history_title">Peida vaatamisajalugus</string>
+  <string name="morphe_hide_shorts_notifications_title">Peita push-teavitustes</string>
   <string name="morphe_shorts_player_screen_title">Shorts pleier</string>
   <string name="morphe_shorts_player_screen_summary">Valige, millised komponendid Shortsi pleieris kuvatakse</string>
   <string name="morphe_disable_shorts_double_tap_to_like_title">Keela kahekordselt puudutades meeldimise märgistamine</string>
@@ -1439,7 +1453,7 @@ Auto paigutus
   <string name="morphe_dearrow_titles_player_title">Playeri loendid &amp; soovitused</string>
   <string name="morphe_dearrow_titles_search_title">Otsingutulemused</string>
   <string name="morphe_dearrow_titles_icon_title">Näita DeArrow ikooni</string>
-  <string name="morphe_dearrow_titles_icon_summary">Näitab DeArrow ikooni kogukonna poolsete videopealkirjade juures</string>
+  <string name="morphe_dearrow_titles_icon_summary">Kuvab DeArrow ikooni rahvussõnastiku videote pealkirjade juures. Puudutage ikooni, et näidata algset pealkirja ja põhikuva</string>
   <string name="morphe_dearrow_casual_mode_title">Vaba režiim</string>
   <string name="morphe_dearrow_casual_mode_summary">Kuvab DeArrow pealkirja asemel algse pealkirja, kui DeArrow kasutajad on hääletanud, et neile meeldib algne pealkiri.</string>
   <string name="morphe_dearrow_casual_mode_min_votes_title">Minimaalne häältes arv algse pealkirja kuvamiseks</string>
@@ -1615,6 +1629,9 @@ AV1-i videote esitus võib tõrgetele tunduda või raame kaotada"</string>
   <string name="morphe_spoof_video_streams_about_no_stable_volume">• Stabiilne helitugevus ei ole saadaval</string>
   <string name="morphe_spoof_video_streams_about_end_early">• Esitus võib lõppeda 1 sekund enne aegust</string>
   <string name="morphe_spoof_video_streams_about_js">• Kui deobfuskatsioon ebaõnnestub, võib esitlus peatuda</string>
+  <!-- "Android System WebView" is the name of the Android app and should not be translated. -->
+  <string name="morphe_spoof_video_streams_about_webview_missing">• Android System WebView on välja lülitatud või pole installitud. Lülitage see sisse ja uuendage, vastasel juhul võib esitlus ebaõnnestuda</string>
+  <string name="morphe_spoof_video_streams_about_webview_outdated">• Android System WebView on aegunud. Uuendage seda, vastasel juhul võib esitlus ebaõnnestuda</string>
   <!-- "Force original audio" should match the language used in 'morphe_force_original_audio_title'. -->
   <string name="morphe_spoof_video_streams_about_no_force_original_audio">• Algse heli sundimine ei ole saadaval</string>
   <string name="morphe_spoof_video_streams_about_sign_in_to_vr_required">• On vaja sisselogida Android VR-i</string>

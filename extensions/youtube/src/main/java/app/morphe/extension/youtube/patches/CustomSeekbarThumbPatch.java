@@ -229,6 +229,7 @@ public final class CustomSeekbarThumbPatch {
             thumb.setColorFilter(colorFilter);
         }
 
+        @Deprecated
         @Override
         public int getOpacity() {
             return PixelFormat.TRANSLUCENT;
@@ -348,7 +349,7 @@ public final class CustomSeekbarThumbPatch {
     private static Drawable loadThumbDrawable() {
         File file = getThumbFile(Utils.getContext());
         if (!file.isFile()) {
-            // Settings were imported from a different install.
+            // Settings were imported from a different installation.
             Logger.printInfo(() -> "Custom seekbar thumb file not found");
             Settings.CUSTOM_SEEKBAR_THUMB_FILE.resetToDefault();
             // Posted to the main thread, because the seekbar is drawing.
@@ -442,8 +443,7 @@ public final class CustomSeekbarThumbPatch {
             Logger.printException(() -> "importThumbFile failure", ex);
             return false;
         } finally {
-            //noinspection ResultOfMethodCallIgnored
-            tempFile.delete();
+            Utils.deleteQuietly(tempFile);
         }
     }
 

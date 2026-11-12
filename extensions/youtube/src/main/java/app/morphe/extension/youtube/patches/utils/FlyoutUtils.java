@@ -300,7 +300,6 @@ public final class FlyoutUtils {
         }
     }
 
-    private static final int VIDEO_ID_LENGTH = 11;
     private static final byte[] PLAYLIST_ID_PREFIX_BYTES =
             getAsciiBytes("playlist?list=");
     private static final List<byte[]> VIDEO_ID_PREFIXES_BYTES = List.of(
@@ -426,6 +425,14 @@ public final class FlyoutUtils {
         }
     }
 
+    /**
+     * @return If the open menu is of a Short in the feed or on a channel, and not of the Shorts player.
+     */
+    public static boolean isShortsFeedMenu() {
+        // The buffer is cleared when the menu closes, but the Shorts flag is not.
+        return isShortFlyout && flyoutBuffer != null && !ShortsPlayerState.isOpen();
+    }
+
     public static String getFlyoutPlaylistId() {
         return flyoutPlaylistId;
     }
@@ -445,10 +452,10 @@ public final class FlyoutUtils {
         byte[] prefix = VIDEO_ID_PREFIXES_BYTES.get(0);
         final int index = byteIndexOf(buffer, prefix);
         final int videoIdStart = index + prefix.length;
-        if (index < 0 || videoIdStart + VIDEO_ID_LENGTH > buffer.length) {
+        if (index < 0 || videoIdStart + VideoInformation.VIDEO_ID_LENGTH > buffer.length) {
             return "";
         }
-        return new String(buffer, videoIdStart, VIDEO_ID_LENGTH, StandardCharsets.US_ASCII);
+        return new String(buffer, videoIdStart, VideoInformation.VIDEO_ID_LENGTH, StandardCharsets.US_ASCII);
     }
 
     public static boolean hasVisibleFlyoutButton(String buttonName) {
@@ -809,7 +816,7 @@ public final class FlyoutUtils {
      */
     private static void onFlyoutListBound(Object flyoutPanel) {
         try {
-            FlyoutMenuInfo menuInfo = getFlyoutMenuInfo(flyoutPanel, 0);
+            FlyoutMenuInfo menuInfo = getFlyoutMenuInfo(flyoutPanel);
             if (menuInfo == null) {
                 return;
             }
@@ -867,7 +874,6 @@ public final class FlyoutUtils {
         return 0;
     }
 
-    @SuppressWarnings("SameParameterValue")
     public static int addFlyoutButton(
             Object flyoutPanel,
             Drawable icon,
@@ -879,7 +885,7 @@ public final class FlyoutUtils {
     }
 
     /**
-     * Adds a save item, which is removed if the app menu binds its own save item afterwards.
+     * Adds a save item, which is removed if the app menu binds its own save item afterward.
      */
     public static int addFlyoutSaveButton(
             Object flyoutPanel,
@@ -947,7 +953,7 @@ public final class FlyoutUtils {
             boolean enabled
     ) {
         try {
-            FlyoutMenuInfo menuInfo = getFlyoutMenuInfo(flyoutPanel, 0);
+            FlyoutMenuInfo menuInfo = getFlyoutMenuInfo(flyoutPanel);
             if (menuInfo == null) {
                 return -1;
             }
@@ -1089,7 +1095,7 @@ public final class FlyoutUtils {
 
         visibleFlyoutButtons.add(new Pair<>(currentButtonName, currentButtonIndex));
         //noinspection SizeReplaceableByIsEmpty
-        if (buttonText != null && buttonText.length() > 0) {
+        if (buttonText.length() > 0) {
             visibleFlyoutButtonTexts.putIfAbsent(currentButtonName, buttonText.toString());
         }
     }
@@ -1114,12 +1120,11 @@ public final class FlyoutUtils {
         currentButtonIndex = 0;
     }
 
-    @SuppressWarnings("SameParameterValue")
     @Nullable
-    private static FlyoutMenuInfo getFlyoutMenuInfo(Object flyoutPanel, int initialIndex) {
+    private static FlyoutMenuInfo getFlyoutMenuInfo(Object flyoutPanel) {
         LinearLayout menuContainer = null;
         PopupWindow popupWindow = null;
-        int adjustedIndex = initialIndex;
+        int adjustedIndex = 0;
 
         if (flyoutPanel instanceof PopupWindow checkedPopupWindow) {
             popupWindow = checkedPopupWindow;
@@ -1422,6 +1427,14 @@ public final class FlyoutUtils {
      * Injection point.
      */
     public static void extractFlyoutIdFromObject(@Nullable Object bufferObject) {
+        byte[] flyoutBuffer = bufferObject instanceof ProtocolBufferFieldInterface bufferInterface
+                && !(bufferObject instanceof FlyoutMenuVideoIdInterface)
+                ? bufferInterface.patch_getBuffer()
+                : null;
+        FlyoutUtils.flyoutBuffer = flyoutBuffer;
+        // Set before the queue reads the source. A Short has no duration badge,
+        // so the queue would otherwise treat its card as a playlist.
+        isShortFlyout = flyoutBuffer != null && byteIndexesOf(flyoutBuffer, SHORTS_VIDEO_ELEMENT_BYTES).size() == 1;
         if (AddToQueuePatch.isPatchIncluded() && AddToQueuePatch.isNativeQueueEnabled()) {
             nativeQueuePlaylistSource = QueueFlyoutActions.playlistSource(bufferObject, senderViewRef.get());
         }
@@ -1435,15 +1448,10 @@ public final class FlyoutUtils {
                 // An empty typed ID must clear the previous menu's video as well.
                 flyoutVideoId = videoId;
                 flyoutPlaylistId = "";
-                isShortFlyout = false;
             }
             return;
         }
 
-        byte[] flyoutBuffer = bufferObject instanceof ProtocolBufferFieldInterface bufferInterface
-                ? bufferInterface.patch_getBuffer()
-                : null;
-        FlyoutUtils.flyoutBuffer = flyoutBuffer;
         if (flyoutBuffer == null) {
             return;
         }
@@ -1457,10 +1465,6 @@ public final class FlyoutUtils {
                 !horizontalShelfHistoryBytesIndexes.isEmpty() &&
                         horizontalShelfHistoryBytesIndexes.size() == HORIZONTAL_SHELF_HISTORY_BYTES.size() &&
                         horizontalShelfHistoryBytesIndexes.get(0) <= 30;
-
-        // Check if Shorts flyout is triggered only in the feed or on channels.
-        List<Integer> shortsVideoElementsBytesIndexes = byteIndexesOf(flyoutBuffer, SHORTS_VIDEO_ELEMENT_BYTES);
-        isShortFlyout = shortsVideoElementsBytesIndexes.size() == 1;
 
         setFlyoutPlaylistId(flyoutBuffer);
 
@@ -1583,12 +1587,12 @@ public final class FlyoutUtils {
 
             if (index >= 0) {
                 final int videoIdStart = index + VIDEO_ID_PREFIX_BYTES.length;
-                final int videoIdEnd = videoIdStart + VIDEO_ID_LENGTH;
+                final int videoIdEnd = videoIdStart + VideoInformation.VIDEO_ID_LENGTH;
                 if (videoIdEnd <= buffer.length) {
                     flyoutVideoId = new String(
                             buffer,
                             videoIdStart,
-                            VIDEO_ID_LENGTH,
+                            VideoInformation.VIDEO_ID_LENGTH,
                             StandardCharsets.US_ASCII
                     );
 
