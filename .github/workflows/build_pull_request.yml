@@ -22,9 +22,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-
-      - name: Cache Gradle
-        uses: burrunan/gradle-cache-action@v3
+          cache: 'gradle'
 
       - name: Test
         env:

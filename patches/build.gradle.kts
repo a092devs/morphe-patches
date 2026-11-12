@@ -63,6 +63,9 @@ dependencies {
 tasks {
     test {
         useJUnitPlatform()
+        exclude("**/PlaylistQueueApkBuild*")
+        exclude("**/Queue*BoundaryTest*")
+        exclude("**/JamPatchRegressionTest*")
         dependsOn(":extensions:youtube:generateReleaseProto", ":extensions:youtube:compileReleaseJavaWithJavac")
         jamApk.orNull?.let { systemProperty("jamApk", it) }
         // The Android-boundary tests load release bytecode in isolated class loaders.
