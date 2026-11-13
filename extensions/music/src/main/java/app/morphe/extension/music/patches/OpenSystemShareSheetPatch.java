@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 Morphe.
- * https://github.com/MorpheApp/morphe-patches
+ * https://github.com/MorpheApp/morphe-patches/pull/4755
  *
  * See the included NOTICE file for GPLv3 Section 7 terms that apply to this code.
  */
@@ -145,8 +145,9 @@ public final class OpenSystemShareSheetPatch {
                     if (nestedValue != null) {
                         return nestedValue;
                     }
-                } catch (IOException ignored) {
+                } catch (IOException ex) {
                     // Not a message, such as a string.
+                    Logger.printDebug(() -> "Ignoring field: " + new String(message));
                 }
             }
         }
@@ -164,7 +165,9 @@ public final class OpenSystemShareSheetPatch {
 
         final byte[] entityBytes;
         try {
-            String base64 = Uri.decode(serializedShareEntity).replace('-', '+').replace('_', '/');
+            String base64 = Uri.decode(serializedShareEntity)
+                    .replace('-', '+')
+                    .replace('_', '/');
             entityBytes = Base64.decode(base64, Base64.DEFAULT);
         } catch (IllegalArgumentException ex) {
             Logger.printDebug(() -> "Share entity is not Base64: " + serializedShareEntity);
