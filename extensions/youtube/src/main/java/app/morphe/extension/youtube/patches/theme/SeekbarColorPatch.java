@@ -109,6 +109,7 @@ public final class SeekbarColorPatch {
         return Settings.SEEKBAR_CUSTOM_COLOR.get();
     }
 
+    @SuppressWarnings("SameReturnValue")
     public static boolean isPatchIncluded() {
         return true;
     }

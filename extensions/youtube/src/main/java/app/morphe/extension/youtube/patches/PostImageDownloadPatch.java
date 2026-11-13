@@ -202,6 +202,7 @@ public final class PostImageDownloadPatch {
         }
     }
 
+    @SuppressWarnings("SameReturnValue")
     public static boolean isPatchIncluded() {
         return true; // Modified during patching.
     }

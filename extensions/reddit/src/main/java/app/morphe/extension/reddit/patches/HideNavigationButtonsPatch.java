@@ -42,6 +42,7 @@ public final class HideNavigationButtonsPatch {
     /**
      * @return If this patch was included during patching.
      */
+    @SuppressWarnings("SameReturnValue")
     public static boolean isPatchIncluded() {
         return true;  // Modified during patching.
     }

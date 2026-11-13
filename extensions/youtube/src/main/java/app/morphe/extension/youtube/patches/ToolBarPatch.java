@@ -37,6 +37,7 @@ public class ToolBarPatch {
         }
     }
 
+    @SuppressWarnings("EmptyMethod")
     private static void hookToolBar(String enumString, View parentView, ImageView imageView) {
         ChannelSearchPatch.setSearchButtonView(enumString, parentView, imageView);
     }

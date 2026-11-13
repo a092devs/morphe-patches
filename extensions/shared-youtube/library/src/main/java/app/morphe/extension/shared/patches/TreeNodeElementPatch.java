@@ -49,10 +49,12 @@ public class TreeNodeElementPatch {
         }
     }
 
+    @SuppressWarnings("EmptyMethod")
     private static void onComponentLoaded(CharSequence path, List<Object> treeNodeResultList) {
         TreeNodeElementHookPatchKt.onComponentLoaded(path, treeNodeResultList);
     }
 
+    @SuppressWarnings("EmptyMethod")
     private static void onLazilyConvertedElementLoaded(CharSequence identifier, List<Object> treeNodeResultList) {
         TreeNodeElementHookPatchKt.onLazilyConvertedElementLoaded(identifier, treeNodeResultList);
     }

@@ -95,7 +95,7 @@ import app.morphe.extension.shared.ui.Dim;
 
 import io.github.nexfusion.morphe.shared.misc.settings.preference.BasePreference;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"unused", "deprecation"})
 public abstract class AbstractPreferenceFragment extends PreferenceFragment {
 
     private static void performToggleHaptic(View view, TwoStatePreference pref) {
