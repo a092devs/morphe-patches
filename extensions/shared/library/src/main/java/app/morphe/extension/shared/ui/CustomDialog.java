@@ -342,6 +342,8 @@ public class CustomDialog {
         // Clear theme-imposed minimum width so text is never clipped with ellipsis.
         button.setMinWidth(0);
         button.setMinimumWidth(0);
+        button.setFocusable(false);
+        button.setFocusableInTouchMode(false);
         // Background color for OK button (inversion) and Cancel/Neutral buttons.
         button.setBackground(createRoundedBackground(20, isOkButton
                 ? ThemeUtils.getOkButtonBackgroundColor()
@@ -434,7 +436,7 @@ public class CustomDialog {
             layoutSingleButton(buttonContainer, buttons.get(0));
         } else if (totalWidth <= buttonAreaWidth()) {
             // Single row: Neutral, Cancel, OK.
-            layoutButtonsInRow(buttonContainer, buttons, buttonWidths);
+            layoutButtonsInRow(buttonContainer, buttons);
         } else {
             // Multiple rows: OK, Cancel, Neutral.
             layoutButtonsInColumns(buttonContainer, buttons);
@@ -463,13 +465,12 @@ public class CustomDialog {
     }
 
     /**
-     * Arranges buttons in a single horizontal row with proportional widths.
+     * Arranges buttons in a single horizontal row with equal, balanced widths.
      *
      * @param buttonContainer The container for the buttons.
      * @param buttons         The list of buttons to arrange.
-     * @param buttonWidths    The measured widths of the buttons.
      */
-    private void layoutButtonsInRow(LinearLayout buttonContainer, List<Button> buttons, List<Integer> buttonWidths) {
+    private void layoutButtonsInRow(LinearLayout buttonContainer, List<Button> buttons) {
         LinearLayout rowContainer = new LinearLayout(context);
         rowContainer.setOrientation(LinearLayout.HORIZONTAL);
         rowContainer.setGravity(Gravity.CENTER);
@@ -477,9 +478,9 @@ public class CustomDialog {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        // Add all buttons with proportional weights and specific margins.
+        // Add all buttons with equal weights and balanced margins.
         for (int i = 0; i < buttons.size(); i++) {
-            Button button = getButton(buttons, buttonWidths, i);
+            Button button = getButton(buttons, i);
             rowContainer.addView(button);
         }
 
@@ -487,13 +488,13 @@ public class CustomDialog {
     }
 
     @NonNull
-    private Button getButton(List<Button> buttons, List<Integer> buttonWidths, int i) {
+    private Button getButton(List<Button> buttons, int i) {
         Button button = buttons.get(i);
         ViewGroup parent = (ViewGroup) button.getParent();
         if (parent != null) parent.removeView(button);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                0, Dim.dp36, buttonWidths.get(i));
+                0, Dim.dp36, 1.0f);
 
         // Set margins based on button type and combination.
         if (buttons.size() == 2) {

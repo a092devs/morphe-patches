@@ -24,9 +24,11 @@ import android.graphics.drawable.Drawable;
 import android.preference.PreferenceCategory;
 import android.preference.TwoStatePreference;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
@@ -570,15 +572,35 @@ public final class RedditSettingsStyle {
         Switch toggle = findSwitch(view);
         if (toggle != null) {
             styleToggle(toggle);
+            toggle.setOnTouchListener((v, event) -> {
+                int action = event.getAction();
+                if (action == MotionEvent.ACTION_UP) {
+                    if (event.getX() >= 0 && event.getX() <= v.getWidth()
+                            && event.getY() >= 0 && event.getY() <= v.getHeight()) {
+                        view.performClick();
+                    }
+                }
+                return true;
+            });
         } else if (!(item instanceof TwoStatePreference)) {
             addCaret(view);
+        }
+
+        View widgetFrame = view.findViewById(android.R.id.widget_frame);
+        if (widgetFrame != null) {
+            widgetFrame.setOnClickListener(v -> view.performClick());
         }
 
         view.setFocusable(false);
         view.setClickable(true);
         view.setOnClickListener(v -> {
             if (parent instanceof ListView lv) {
-                lv.performItemClick(view, position, lv.getAdapter().getItemId(position));
+                int pos = lv.getPositionForView(view);
+                if (pos == AdapterView.INVALID_POSITION) {
+                    pos = position;
+                }
+                long id = lv.getAdapter() != null ? lv.getAdapter().getItemId(pos) : pos;
+                lv.performItemClick(view, pos, id);
             }
         });
     }

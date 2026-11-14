@@ -80,6 +80,7 @@ final class SettingChange {
             if (setting.rebootApp) {
                 AbstractPreferenceFragment.setRestartNeeded();
             }
+            preference.updateFromSetting();
         } catch (RuntimeException ex) {
             Logger.printException(() -> "Could not save " + setting.key + ": " + newValue, ex);
             // Show the value the setting kept.
