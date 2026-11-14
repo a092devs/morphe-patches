@@ -123,6 +123,9 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
 
             setId(android.R.id.list); // Required so PreferenceFragment recognizes it.
 
+            setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            setItemsCanFocus(false);
+
             // Match the default layout params
             setLayoutParams(new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,

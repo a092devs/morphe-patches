@@ -428,6 +428,8 @@ public final class RedditSettingsStyle {
         listView.setDividerHeight(0);
         listView.setClipToPadding(false);
         listView.setPadding(0, 0, 0, Dim.dp16);
+        listView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        listView.setItemsCanFocus(false);
 
         ViewTreeObserver.OnPreDrawListener listener = () -> {
             ListAdapter adapter = listView.getAdapter();
@@ -453,7 +455,7 @@ public final class RedditSettingsStyle {
         public View getView(int position, View convertView, ViewGroup parent) {
             View view = adapter.getView(position, convertView, parent);
             try {
-                styleRow(view, adapter.getItem(position), position);
+                styleRow(view, adapter.getItem(position), position, parent);
             } catch (Exception ex) {
                 Logger.printException(() -> "styleRow failure", ex);
             }
@@ -521,14 +523,19 @@ public final class RedditSettingsStyle {
 
     // region Rows.
 
-    private static void styleRow(View view, Object item, int position) {
+    private static void styleRow(View view, Object item, int position, ViewGroup parent) {
         TextView title = view.findViewById(android.R.id.title);
         if (title == null) return;
 
         if (item instanceof PreferenceCategory) {
             styleSectionHeader(view, title, position == 0);
+            view.setOnClickListener(null);
+            view.setClickable(false);
+            view.setFocusable(false);
             return;
         }
+
+        stripFocusAndSelection(view);
 
         // Text is set again for every bind, the style only once per view.
         if (styledViews.add(view)) {
@@ -566,6 +573,34 @@ public final class RedditSettingsStyle {
         } else if (!(item instanceof TwoStatePreference)) {
             addCaret(view);
         }
+
+        view.setFocusable(false);
+        view.setClickable(true);
+        view.setOnClickListener(v -> {
+            if (parent instanceof ListView lv) {
+                lv.performItemClick(view, position, lv.getAdapter().getItemId(position));
+            }
+        });
+    }
+
+    private static void stripFocusAndSelection(View v) {
+        v.setFocusable(false);
+        v.setFocusableInTouchMode(false);
+        if (v instanceof TextView tv) {
+            tv.setTextIsSelectable(false);
+            tv.setFocusable(false);
+            tv.setFocusableInTouchMode(false);
+            tv.setClickable(false);
+            tv.setLongClickable(false);
+            tv.setMovementMethod(null);
+            tv.setKeyListener(null);
+        }
+        if (v instanceof ViewGroup group) {
+            group.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            for (int i = 0, count = group.getChildCount(); i < count; i++) {
+                stripFocusAndSelection(group.getChildAt(i));
+            }
+        }
     }
 
     private static void styleSectionHeader(View view, TextView title, boolean isFirst) {
@@ -576,6 +611,14 @@ public final class RedditSettingsStyle {
         } else {
             title.setPaddingRelative(0, topPadding, 0, Dim.dp8);
         }
+
+        title.setFocusable(false);
+        title.setFocusableInTouchMode(false);
+        title.setClickable(false);
+        title.setLongClickable(false);
+        title.setTextIsSelectable(false);
+        title.setMovementMethod(null);
+        title.setKeyListener(null);
 
         if (!styledViews.add(view)) return;
 
@@ -646,6 +689,9 @@ public final class RedditSettingsStyle {
     // region Toggle.
 
     private static void styleToggle(Switch toggle) {
+        toggle.setFocusable(false);
+        toggle.setClickable(false);
+
         if (!styledViews.add(toggle)) return;
 
         toggle.setThumbTintList(null);

@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceScreen;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ListView;
 
@@ -56,9 +57,11 @@ public class RedditPreferenceFragment extends AbstractPreferenceFragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (RedditSettingsStyle.isModernStyle()) {
-            ListView listView = view.findViewById(android.R.id.list);
-            if (listView != null) {
+        ListView listView = view.findViewById(android.R.id.list);
+        if (listView != null) {
+            listView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            listView.setItemsCanFocus(false);
+            if (RedditSettingsStyle.isModernStyle()) {
                 styleListener = RedditSettingsStyle.styleList(listView);
             }
         }
