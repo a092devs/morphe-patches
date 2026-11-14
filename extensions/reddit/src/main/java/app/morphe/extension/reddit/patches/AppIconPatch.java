@@ -208,13 +208,6 @@ public class AppIconPatch {
 
     private static void showPickerDialog(Context context, @Nullable RedditIcon current) {
         List<RedditIcon> icons = RedditIcon.getAvailableIcons(context);
-        IconAdapter adapter = new IconAdapter(context, icons, current);
-
-        ListView listView = new ListView(context);
-        listView.setId(android.R.id.list);
-        listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        listView.setDividerHeight(0);
-        listView.setAdapter(adapter);
 
         Pair<Dialog, LinearLayout> dialogPair = CustomDialog.create(
                 context,
@@ -227,14 +220,28 @@ public class AppIconPatch {
         Dialog dialog = dialogPair.first;
         LinearLayout mainLayout = dialogPair.second;
 
+        java.util.function.Consumer<RedditIcon> onSelect = selected -> {
+            dialog.dismiss();
+            confirmAndApply(context, selected);
+        };
+
+        IconAdapter adapter = new IconAdapter(context, icons, current, onSelect);
+
+        ListView listView = new ListView(context);
+        listView.setId(android.R.id.list);
+        listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        listView.setDividerHeight(0);
+        listView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        listView.setItemsCanFocus(false);
+        listView.setAdapter(adapter);
+
         LinearLayout.LayoutParams listViewParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f);
 
         mainLayout.addView(listView, mainLayout.getChildCount() - 1, listViewParams);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            dialog.dismiss();
-            confirmAndApply(context, icons.get(position));
+            onSelect.accept(icons.get(position));
         });
 
         dialog.show();
@@ -247,7 +254,10 @@ public class AppIconPatch {
                 str("morphe_settings_restart_dialog_message"),
                 null,
                 str("morphe_settings_restart"),
-                () -> applyIcon(context, selected),
+                () -> {
+                    applyIcon(context, selected);
+                    Utils.restartApp(context);
+                },
                 () -> {}, // Cancel action
                 null, null, true
         ).first.show();
@@ -297,10 +307,13 @@ public class AppIconPatch {
     private static class IconAdapter extends ArrayAdapter<RedditIcon> {
         @Nullable
         private final RedditIcon currentComponent;
+        private final java.util.function.Consumer<RedditIcon> onSelect;
 
-        IconAdapter(Context ctx, List<RedditIcon> items, @Nullable RedditIcon current) {
+        IconAdapter(Context ctx, List<RedditIcon> items, @Nullable RedditIcon current,
+                    java.util.function.Consumer<RedditIcon> onSelect) {
             super(ctx, 0, items);
             currentComponent = current;
+            this.onSelect = onSelect;
         }
 
         @NonNull
@@ -313,6 +326,14 @@ public class AppIconPatch {
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setPadding(32, 20, 32, 20);
             row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setFocusable(false);
+            row.setFocusableInTouchMode(false);
+            row.setClickable(true);
+            row.setOnClickListener(v -> {
+                if (redditIcon != null && onSelect != null) {
+                    onSelect.accept(redditIcon);
+                }
+            });
 
             ImageView checkIcon = new ImageView(context);
             checkIcon.setImageResource(CustomDialogListPreference.DRAWABLE_CHECKMARK);
@@ -323,6 +344,8 @@ public class AppIconPatch {
             checkParams.gravity = Gravity.CENTER_VERTICAL;
             checkIcon.setLayoutParams(checkParams);
             checkIcon.setVisibility(redditIcon == currentComponent ? View.VISIBLE : View.INVISIBLE);
+            checkIcon.setFocusable(false);
+            checkIcon.setClickable(false);
             row.addView(checkIcon);
 
             ImageView img = new ImageView(context);
@@ -330,6 +353,8 @@ public class AppIconPatch {
             LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(size, size);
             imgParams.setMarginStart(28);
             img.setLayoutParams(imgParams);
+            img.setFocusable(false);
+            img.setClickable(false);
 
             Drawable iconDrawable = (redditIcon != null) ? redditIcon.getIcon(context) : null;
             if (iconDrawable == null) {
@@ -351,11 +376,16 @@ public class AppIconPatch {
             colParams.setMarginStart(28);
             colParams.gravity = Gravity.CENTER_VERTICAL;
             col.setLayoutParams(colParams);
+            col.setFocusable(false);
+            col.setClickable(false);
 
             TextView title = new TextView(context);
             if (redditIcon != null) title.setText(redditIcon.label);
             title.setTextSize(15f);
             title.setTextColor(ThemeUtils.getDialogTextColor());
+            title.setFocusable(false);
+            title.setFocusableInTouchMode(false);
+            title.setClickable(false);
             col.addView(title);
             row.addView(col);
 

@@ -327,14 +327,50 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
         }
 
         final var identifier = ResourceUtils.getIdentifier(ResourceType.XML, preferenceResourceName);
-        if (identifier == 0) return;
-        addPreferencesFromResource(identifier);
+        if (identifier != 0) {
+            addPreferencesFromResource(identifier);
+        }
 
         PreferenceScreen screen = getPreferenceScreen();
+        if (screen != null) {
+            attachNexFusionPreferences(screen);
+        }
         // Before sorting, which goes by the translated titles.
-        PreferenceTranslations.translate(getResources(), identifier, screen);
+        if (identifier != 0) {
+            PreferenceTranslations.translate(getResources(), identifier, screen);
+        }
         sortPreferenceGroups(screen);
         Utils.setPreferenceTitlesToMultiLine(screen);
+    }
+
+    private void attachNexFusionPreferences(PreferenceScreen screen) {
+        if (screen == null) return;
+        try {
+            Class<?> prefKt = Class.forName("io.github.nexfusion.morphe.shared.settings.PreferencesKt");
+            java.lang.reflect.Method getPrefs = prefKt.getMethod("getPreferences");
+            java.util.Set<?> set = (java.util.Set<?>) getPrefs.invoke(null);
+            if (set != null && !set.isEmpty()) {
+                android.content.Context ctx = getActivity();
+                android.preference.PreferenceManager prefMgr = getPreferenceManager();
+                for (Object item : set) {
+                    try {
+                        java.lang.reflect.Method buildMethod = item.getClass().getMethod("build", android.content.Context.class, android.preference.PreferenceManager.class);
+                        android.preference.Preference pref = (android.preference.Preference) buildMethod.invoke(item, ctx, prefMgr);
+                        if (pref != null) {
+                            screen.addPreference(pref);
+                            try {
+                                java.lang.reflect.Method onAttached = item.getClass().getMethod("onAttachedToHierarchy");
+                                onAttached.invoke(item);
+                            } catch (Throwable ignored) {}
+                        }
+                    } catch (Throwable t) {
+                        Logger.printException(() -> "Error building NexFusion preference item " + item, t);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Logger.printException(() -> "attachNexFusionPreferences failure", t);
+        }
     }
 
     /**

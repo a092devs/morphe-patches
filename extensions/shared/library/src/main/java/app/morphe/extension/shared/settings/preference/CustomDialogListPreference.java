@@ -178,6 +178,11 @@ public class CustomDialogListPreference extends ListPreference implements Settin
 
         final CharSequence[] entryValues;
         String selectedValue;
+        private java.util.function.Consumer<Integer> onItemClickListener;
+
+        public void setOnItemClickListener(java.util.function.Consumer<Integer> listener) {
+            this.onItemClickListener = listener;
+        }
 
         public ListPreferenceArrayAdapter(Context context,
                                           CharSequence[] entries,
@@ -215,6 +220,15 @@ public class CustomDialogListPreference extends ListPreference implements Settin
             holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
             holder.checkIcon.setColorFilter(ThemeUtils.getDialogTextColor());
             holder.placeholder.setVisibility(isSelected ? View.GONE : View.VISIBLE);
+
+            view.setFocusable(false);
+            view.setFocusableInTouchMode(false);
+            view.setClickable(true);
+            view.setOnClickListener(v -> {
+                if (onItemClickListener != null) {
+                    onItemClickListener.accept(position);
+                }
+            });
 
             return view;
         }
@@ -343,6 +357,8 @@ public class CustomDialogListPreference extends ListPreference implements Settin
         listView.setId(android.R.id.list);
         listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         listView.setDividerHeight(0);
+        listView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        listView.setItemsCanFocus(false);
 
         // Create custom adapter for the ListView.
         ListPreferenceArrayAdapter adapter = new ListPreferenceArrayAdapter(
@@ -390,6 +406,11 @@ public class CustomDialogListPreference extends ListPreference implements Settin
         mainLayout.addView(listView, mainLayout.getChildCount() - 1, listViewParams);
 
         // Handle item click to select value and dismiss dialog.
+        adapter.setOnItemClickListener(position -> {
+            onSelected.accept(position);
+            dialog.dismiss();
+        });
+
         listView.setOnItemClickListener((parent, view, position, id) -> {
             onSelected.accept(position);
             dialog.dismiss();
