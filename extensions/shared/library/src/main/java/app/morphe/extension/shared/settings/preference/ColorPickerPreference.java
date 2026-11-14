@@ -26,6 +26,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
+import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -60,7 +61,7 @@ import app.morphe.extension.shared.ui.Dim;
  * reflecting the currently selected color. The dot is dimmed when the preference is disabled.
  */
 @SuppressWarnings({"unused", "deprecation"})
-public class ColorPickerPreference extends EditTextPreference {
+public class ColorPickerPreference extends EditTextPreference implements SettingPreference {
     /** Length of a valid color string of format #RRGGBB (without alpha) or #AARRGGBB (with alpha). */
     public static final int COLOR_STRING_LENGTH_WITHOUT_ALPHA = 7;
     public static final int COLOR_STRING_LENGTH_WITH_ALPHA = 9;
@@ -109,6 +110,7 @@ public class ColorPickerPreference extends EditTextPreference {
             Setting<?> setting = Setting.getSettingFromPath(key);
             if (setting instanceof StringSetting stringSetting) {
                 colorSetting = stringSetting;
+                setPersistent(false);
             }
         }
     }
@@ -182,9 +184,16 @@ public class ColorPickerPreference extends EditTextPreference {
      * Initializes the preference by setting up the EditText, loading the color, and set the widget layout.
      */
     private void init() {
-        getColorSetting();
-        if (getKey() != null && colorSetting == null) {
-            Logger.printException(() -> "Could not find color setting for: " + getKey());
+        if (getKey() != null) {
+            StringSetting setting = getColorSetting();
+            if (setting == null) {
+                Logger.printException(() -> "Could not find color setting for: " + getKey());
+            } else {
+                // The setting saves the value.
+                setPersistent(false);
+            }
+        } else {
+            Logger.printDebug(() -> "initialized without key, settings will be loaded later");
         }
 
         EditText editText = getEditText();
@@ -194,6 +203,21 @@ public class ColorPickerPreference extends EditTextPreference {
 
         // Set the widget layout to a custom layout containing the colored dot.
         setWidgetLayoutResource(LAYOUT_MORPHE_COLOR_DOT_WIDGET);
+    }
+
+    @Override
+    protected void onAttachedToHierarchy(PreferenceManager preferenceManager) {
+        super.onAttachedToHierarchy(preferenceManager);
+        updateFromSetting();
+    }
+
+    @Override
+    public void updateFromSetting() {
+        StringSetting setting = getColorSetting();
+        if (setting != null) {
+            setText(setting.get());
+            setEnabled(setting.isAvailable());
+        }
     }
 
     /**

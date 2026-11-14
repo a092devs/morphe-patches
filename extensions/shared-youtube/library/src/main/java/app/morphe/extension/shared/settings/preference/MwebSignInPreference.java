@@ -30,6 +30,8 @@ import android.webkit.WebViewClient;
 
 import androidx.annotation.Nullable;
 
+import java.util.regex.Pattern;
+
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.settings.Setting;
@@ -51,6 +53,14 @@ public abstract class MwebSignInPreference extends Preference implements Prefere
             "gstatic.com",
             "googleusercontent.com",
     };
+
+    /**
+     * Google of a country, such as google.it, google.co.uk or google.com.br.
+     * After the sign in, Google also signs in to the Google of the country of the user,
+     * and only then continues to YouTube.
+     */
+    private static final Pattern GOOGLE_COUNTRY_HOST_PATTERN =
+            Pattern.compile("(?:^|\\.)google\\.(?:com?\\.)?[a-z]{2}$");
 
     {
         setOnPreferenceClickListener(this);
@@ -136,13 +146,13 @@ public abstract class MwebSignInPreference extends Preference implements Prefere
                 null,
                 // OK button text.
                 str(signedIn
-                        ? "morphe_spoof_video_streams_sign_in_mweb_dialog_sign_out"
+                        ? "morphe_spoof_video_streams_sign_in_android_vr_dialog_reset"
                         : "gms_core_dialog_continue_text"),
                 // OK button action.
                 signedIn
                         ? () -> {
                             MwebSignIn.signOut();
-                            // The cookies are removed on the main thread after this.
+                            // After the cookie store has handled the removed cookies.
                             Utils.runOnMainThread(this::updateUI);
                         }
                         : this::showSignInDialog,
@@ -227,6 +237,19 @@ public abstract class MwebSignInPreference extends Preference implements Prefere
                 if ("https".equals(uri.getScheme()) && isAllowedHost(uri.getHost())) {
                     return false;
                 }
+                if ("https".equals(uri.getScheme()) && uri.getHost() != null
+                        && GOOGLE_COUNTRY_HOST_PATTERN.matcher(uri.getHost()).find()) {
+                    // Only the sign in to YouTube is needed. The cookies of the Google of the country
+                    // could not be removed when signing out, since its host is not known,
+                    // so the sign in goes on to YouTube without it.
+                    String next = uri.getQueryParameter("continue");
+                    Uri nextUri = next == null ? null : Uri.parse(next);
+                    if (nextUri != null && "https".equals(nextUri.getScheme()) && isAllowedHost(nextUri.getHost())) {
+                        view.loadUrl(next);
+                        return true;
+                    }
+                    return false;
+                }
                 // The sign in ends with an intent link to m.youtube.com, which would open the YouTube website
                 // in the browser. It is opened here instead.
                 if ("intent".equals(uri.getScheme())) {
@@ -302,7 +325,7 @@ public abstract class MwebSignInPreference extends Preference implements Prefere
         CustomDialog.create(
                 getContext(),
                 // Title.
-                str("morphe_spoof_video_streams_sign_in_mweb_success_dialog_title"),
+                str("morphe_spoof_video_streams_sign_in_android_vr_success_dialog_title"),
                 // Message.
                 BulletPointPreference.formatIntoBulletPoints(
                         str("morphe_spoof_video_streams_sign_in_mweb_success_dialog_message")

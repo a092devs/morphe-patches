@@ -13,6 +13,8 @@ package app.morphe.extension.shared.spoof.requests;
 import static app.morphe.extension.shared.StringRef.str;
 
 import android.net.Uri;
+import android.util.Base64;
+import android.util.Base64InputStream;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -56,7 +58,7 @@ import app.morphe.extension.shared.settings.SharedYouTubeSettings;
 import app.morphe.extension.shared.spoof.ClientType;
 import app.morphe.extension.shared.spoof.MwebSignIn;
 import app.morphe.extension.shared.spoof.MwebSiteSession;
-import app.morphe.extension.shared.spoof.MwebStreamGuard;
+import app.morphe.extension.shared.spoof.MwebStream;
 import app.morphe.extension.shared.spoof.PreferredClientCheck;
 import app.morphe.extension.shared.spoof.js.JavaScriptEngineSupport;
 import app.morphe.extension.shared.spoof.js.JavaScriptManager;
@@ -151,9 +153,12 @@ public class StreamingDataRequest {
 
     private static final String AUTHORIZATION_HEADER = "Authorization"; // Available only to logged-in users.
     /**
-     * Origin of the InnerTube requests of the web clients, as the website makes them.
+     * Asks the website host to encode a response that a browser could run as a script, such as a proto response.
+     * The response then has {@link #SAFETY_ENCODING_HEADER}.
      */
-    private static final String WEB_API_ORIGIN = "https://www.youtube.com";
+    private static final String ENCODE_RESPONSE_HEADER = "X-Goog-Encode-Response-If-Executable";
+    private static final String SAFETY_ENCODING_HEADER = "X-Goog-Safety-Encoding";
+    private static final String BASE64_ENCODING = "base64";
     private static final String API_FORMAT_VERSION_HEADER = "X-GOOG-API-FORMAT-VERSION";
     private static final String VISITOR_ID_HEADER = "X-Goog-Visitor-Id";
 
@@ -371,11 +376,6 @@ public class StreamingDataRequest {
         }
     }
 
-    // Compatibility bridge
-    public static void setPlayerHeaders(Map<String, String> headers) {
-        setAppHeaders(headers);
-    }
-
     public static void fetchRequest(String videoId, Map<String, String> fetchHeaders) {
         ClientType[] clientOrder = clientOrderToUse;
         synchronized (cache) {
@@ -556,37 +556,32 @@ public class StreamingDataRequest {
         final boolean authHeadersIncludes = Utils.isNotEmpty(authorization);
 
         try {
-            HttpURLConnection connection =
-                    PlayerRoutes.getPlayerResponseConnectionFromRoute(clientType, includeVideoDetails);
+            // Web clients accept only the cookies of a web sign in, and not the access token of the app.
+            // Without a web sign in, the client is used signed out, as the website is.
+            Map<String, String> webSignInHeaders = clientType.isWebClient()
+                    ? MwebSignIn.getRequestHeaders()
+                    : null;
+
+            HttpURLConnection connection = PlayerRoutes.getPlayerResponseConnectionFromRoute(
+                    clientType, includeVideoDetails, webSignInHeaders != null);
             connection.setConnectTimeout(HTTP_TIMEOUT_MILLISECONDS);
             connection.setReadTimeout(HTTP_TIMEOUT_MILLISECONDS);
 
             authHeadersOverrides = false;
 
-            // Web clients accept only the cookies of a web sign in, and not the access token of the app:
-            // MWEB. Without a web sign in, the client is used signed out, as the website is.
+            // The web sign in is used, and the request is made to the website host, as the website makes it:
+            // MWEB.
             if (clientType.isWebClient()) {
-                // The session of the account is in the authorization.
-                String cookies = MwebSignIn.isSignedIn() && MwebSignIn.getDataSyncId() != null
-                        ? MwebSignIn.getCookieHeader()
-                        : null;
-                String webAuthorization = cookies == null ? null : MwebSignIn.getAuthorization(WEB_API_ORIGIN);
-                if (webAuthorization == null) {
+                if (webSignInHeaders == null) {
                     Logger.printDebug(() -> "Not signed in to the website, using signed out: " + clientType
                             + ", videoId: " + videoId);
                 } else {
-                    connection.setRequestProperty("Cookie", cookies);
-                    connection.setRequestProperty(AUTHORIZATION_HEADER, webAuthorization);
-                    // The authorization is made for this origin. The "Origin" header is not set,
-                    // because the API host refuses an origin of another host.
-                    connection.setRequestProperty("X-Origin", WEB_API_ORIGIN);
-                    connection.setRequestProperty("X-Goog-AuthUser", "0");
-                    connection.setRequestProperty("X-Youtube-Bootstrap-Logged-In", "true");
-                    String delegatedSessionId = MwebSignIn.getDelegatedSessionId();
-                    if (delegatedSessionId != null) {
-                        // A brand account.
-                        connection.setRequestProperty("X-Goog-PageId", delegatedSessionId);
+                    for (Map.Entry<String, String> header : webSignInHeaders.entrySet()) {
+                        connection.setRequestProperty(header.getKey(), header.getValue());
                     }
+                    // The website host refuses a proto response, which a browser could run as a script,
+                    // unless it is encoded. See buildPlayerResponseBuffer.
+                    connection.setRequestProperty(ENCODE_RESPONSE_HEADER, BASE64_ENCODING);
                     Logger.printDebug(() -> "Set web sign in: " + clientType + ", videoId: " + videoId);
                 }
             }
@@ -633,7 +628,7 @@ public class StreamingDataRequest {
             // See: https://github.com/MorpheApp/morphe-patches/issues/2283.
             String visitorId = VisitorIdRequester.getVisitorId(clientType);
             // A signed in web client uses the visitor of its website session.
-            if (clientType.isWebClient() && MwebSignIn.isSignedIn() && MwebSignIn.getDataSyncId() != null) {
+            if (webSignInHeaders != null) {
                 String sessionVisitorData = MwebSignIn.getVisitorData();
                 if (sessionVisitorData != null) {
                     visitorId = sessionVisitorData;
@@ -708,7 +703,9 @@ public class StreamingDataRequest {
             return null;
         }
 
-        try (InputStream inputStream = connection.getInputStream()) {
+        try (InputStream inputStream = BASE64_ENCODING.equals(connection.getHeaderField(SAFETY_ENCODING_HEADER))
+                ? new Base64InputStream(connection.getInputStream(), Base64.DEFAULT)
+                : connection.getInputStream()) {
             PlayerResponse playerResponse;
 
             if (clientType.usePlayerEndpoint) {
@@ -802,7 +799,7 @@ public class StreamingDataRequest {
                 }
                 responseBuilder.setStreamingData(responseBuilder.getStreamingData().toBuilder()
                         .setServerAbrStreamingUrl(siteSession.serverAbrStreamingUrl));
-                MwebStreamGuard.onStreams(Uri.parse(siteSession.serverAbrStreamingUrl).getQueryParameter("id"), videoId);
+                MwebStream.onStreams(videoId, siteSession);
             }
 
             byte[] streamingDataBuffer = responseBuilder.build().toByteArray();
@@ -811,6 +808,13 @@ public class StreamingDataRequest {
 
             if (clientType.requireSABR && playerResponse.hasPlayerConfig()) {
                 PlayerConfig.Builder playerConfigBuilder = playerResponse.getPlayerConfig().toBuilder();
+
+                // Newer client versions, such as the Android VR version of ANDROID_VR_EXPERIMENTAL,
+                // turn on how the player handles ads the server inserts into the SABR stream.
+                // Some videos can then load again in a loop and never start, so the config is removed,
+                // as the client versions without it do not send it.
+                // See: https://github.com/MorpheApp/morphe-patches/issues/4791.
+                playerConfigBuilder.clearDaiConfig();
 
                 // If 'androidMedialibConfig' exists in the response, all playerConfigs are compatible.
                 // Override all playerConfigs.
