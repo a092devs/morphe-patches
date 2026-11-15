@@ -223,14 +223,36 @@ public class CustomDialogListPreference extends ListPreference implements Settin
             holder.checkIcon.setColorFilter(ThemeUtils.getDialogTextColor());
             holder.placeholder.setVisibility(isSelected ? View.GONE : View.VISIBLE);
 
-            view.setFocusable(false);
-            view.setFocusableInTouchMode(false);
-            view.setClickable(true);
-            view.setOnClickListener(v -> {
+            View.OnClickListener clickListener = v -> {
                 if (onItemClickListener != null) {
                     onItemClickListener.accept(position);
                 }
-            });
+            };
+
+            view.setFocusable(false);
+            view.setFocusableInTouchMode(false);
+            view.setClickable(true);
+            if (view instanceof ViewGroup group) {
+                group.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            }
+            view.setOnClickListener(clickListener);
+
+            holder.itemText.setTextIsSelectable(false);
+            holder.itemText.setFocusable(false);
+            holder.itemText.setFocusableInTouchMode(false);
+            holder.itemText.setClickable(true);
+            holder.itemText.setLongClickable(false);
+            holder.itemText.setMovementMethod(null);
+            holder.itemText.setKeyListener(null);
+            holder.itemText.setOnClickListener(clickListener);
+
+            holder.checkIcon.setFocusable(false);
+            holder.checkIcon.setClickable(true);
+            holder.checkIcon.setOnClickListener(clickListener);
+
+            holder.placeholder.setFocusable(false);
+            holder.placeholder.setClickable(true);
+            holder.placeholder.setOnClickListener(clickListener);
 
             return view;
         }

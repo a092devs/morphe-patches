@@ -326,14 +326,17 @@ public class AppIconPatch {
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setPadding(32, 20, 32, 20);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setFocusable(false);
-            row.setFocusableInTouchMode(false);
-            row.setClickable(true);
-            row.setOnClickListener(v -> {
+            View.OnClickListener clickListener = v -> {
                 if (redditIcon != null && onSelect != null) {
                     onSelect.accept(redditIcon);
                 }
-            });
+            };
+
+            row.setFocusable(false);
+            row.setFocusableInTouchMode(false);
+            row.setClickable(true);
+            row.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            row.setOnClickListener(clickListener);
 
             ImageView checkIcon = new ImageView(context);
             checkIcon.setImageResource(CustomDialogListPreference.DRAWABLE_CHECKMARK);
@@ -345,7 +348,8 @@ public class AppIconPatch {
             checkIcon.setLayoutParams(checkParams);
             checkIcon.setVisibility(redditIcon == currentComponent ? View.VISIBLE : View.INVISIBLE);
             checkIcon.setFocusable(false);
-            checkIcon.setClickable(false);
+            checkIcon.setClickable(true);
+            checkIcon.setOnClickListener(clickListener);
             row.addView(checkIcon);
 
             ImageView img = new ImageView(context);
@@ -354,7 +358,8 @@ public class AppIconPatch {
             imgParams.setMarginStart(28);
             img.setLayoutParams(imgParams);
             img.setFocusable(false);
-            img.setClickable(false);
+            img.setClickable(true);
+            img.setOnClickListener(clickListener);
 
             Drawable iconDrawable = (redditIcon != null) ? redditIcon.getIcon(context) : null;
             if (iconDrawable == null) {
@@ -377,15 +382,21 @@ public class AppIconPatch {
             colParams.gravity = Gravity.CENTER_VERTICAL;
             col.setLayoutParams(colParams);
             col.setFocusable(false);
-            col.setClickable(false);
+            col.setClickable(true);
+            col.setOnClickListener(clickListener);
 
             TextView title = new TextView(context);
             if (redditIcon != null) title.setText(redditIcon.label);
             title.setTextSize(15f);
             title.setTextColor(ThemeUtils.getDialogTextColor());
+            title.setTextIsSelectable(false);
             title.setFocusable(false);
             title.setFocusableInTouchMode(false);
-            title.setClickable(false);
+            title.setClickable(true);
+            title.setLongClickable(false);
+            title.setMovementMethod(null);
+            title.setKeyListener(null);
+            title.setOnClickListener(clickListener);
             col.addView(title);
             row.addView(col);
 
