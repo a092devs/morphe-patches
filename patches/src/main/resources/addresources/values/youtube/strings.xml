@@ -587,6 +587,8 @@ After a video with the Ask button is opened once, the feature works with all vid
     <string name="morphe_disable_chapter_skip_double_tap_summary">Disables the two-finger double-tap gesture that skips chapters, which may be accidentally triggered with one finger</string>
 
     <!-- interaction.downloads.downloadsPatch -->
+    <string name="morphe_offline_video_quality_1440p">Quad HD (1440p)</string>
+    <string name="morphe_offline_video_quality_2160p">4K (2160p)</string>
     <string name="morphe_external_downloader_screen_summary">Download videos, podcasts, or songs with third-party downloading apps</string>
     <string name="morphe_external_downloader_overlay_button_title">Show player overlay download button</string>
     <string name="morphe_external_downloader_overlay_button_summary">Shows a button in the video player that opens your external downloader</string>
@@ -603,6 +605,10 @@ After a video with the Ask button is opened once, the feature works with all vid
     <string name="morphe_shorts_download_flyout_button_title">Show download in Shorts menu</string>
     <string name="morphe_shorts_download_flyout_button_summary">Adds a download item to the menu of the Shorts player</string>
     <string name="morphe_shorts_download_flyout_title">Download</string>
+    <string name="morphe_feed_download_flyout_button_title">Show download in video menus</string>
+    <string name="morphe_feed_download_flyout_button_summary">Adds a download item to the menus of videos in the feed that have none, such as videos that YouTube only lets Premium members download</string>
+    <string name="morphe_download_force_4k_title">Force 4K download availability</string>
+    <string name="morphe_download_force_4k_summary">Offers 1440p and 4K downloads even if YouTube decides this device cannot play them. Such videos may play without video inside YouTube, but can be exported to your device</string>
     <string name="morphe_export_download_folder_title">Export saved videos</string>
     <string name="morphe_export_download_folder_summary">"Export in-app saved videos to your device storage using the in-app downloads flyout menu. Tap to change the export folder
 
@@ -837,6 +843,10 @@ Info: May not work on live streams"</string>
     <string name="morphe_queue_manager_save_queue">Save queue to playlist</string>
 
     <!-- interaction.nativeplaylistqueue.nativePlaylistQueuePatch -->
+    <string name="morphe_native_queue_thumbnail_button_title">Show queue button on thumbnails</string>
+    <string name="morphe_native_queue_thumbnail_button_summary">A queue button is shown on the thumbnails of feed videos. Tapping it adds the video to the end of the queue, and tapping and holding it plays the video next</string>
+    <string name="morphe_native_queue_thumbnail_swap_actions_title">Swap thumbnail queue actions</string>
+    <string name="morphe_native_queue_thumbnail_swap_actions_summary">Tapping the queue button plays the video next, and tapping and holding it adds the video to the end of the queue</string>
     <string name="morphe_native_queue_fetch_on_scroll_title">Load queue pages on scroll</string>
     <string name="morphe_native_queue_fetch_on_scroll_summary">Loads more playlist videos when scrolling near the end of the queue</string>
     <string name="morphe_native_playlist_queue_saved">Playlist saved</string>
@@ -1619,7 +1629,7 @@ Automotive layout
     <string name="morphe_dearrow_titles_player_title">Player playlists &amp; recommendations</string>
     <string name="morphe_dearrow_titles_search_title">Search results</string>
     <string name="morphe_dearrow_titles_icon_title">Show DeArrow icon</string>
-    <string name="morphe_dearrow_titles_icon_summary">Shows the DeArrow icon on crowdsourced video titles. Tap the icon to show the original title and thumbnail</string>
+    <string name="morphe_dearrow_titles_icon_summary">Shows the DeArrow icon on the titles of videos with a crowdsourced title or thumbnail. Tap the icon to show the original title and thumbnail</string>
     <string name="morphe_dearrow_casual_mode_title">Casual mode</string>
     <string name="morphe_dearrow_casual_mode_summary">Shows the original title instead of the DeArrow title if DeArrow users voted they like the original title</string>
     <string name="morphe_dearrow_casual_mode_min_votes_title">Minimum casual votes to show original title</string>
@@ -1645,6 +1655,65 @@ Videos are requested by a short prefix of the hashed video ID, so the server can
     <!-- Translations of this should not be longer than the original English text, otherwise the text can be clipped and not entirely shown. -->
     <string name="morphe_dearrow_error">DeArrow is temporarily not available (status code: %s)</string>
     <string name="morphe_dearrow_error_generic">DeArrow is temporarily not available</string>
+    <string name="morphe_dearrow_vote_button_title">Show DeArrow button</string>
+    <string name="morphe_dearrow_vote_button_summary">Adds a button to the top of the video player to vote on DeArrow titles and thumbnails, or submit new ones</string>
+    <string name="morphe_dearrow_guidelines_title">Guidelines</string>
+    <string name="morphe_dearrow_guidelines_summary">Guidelines contain rules and tips for submitting and voting on titles and thumbnails</string>
+    <string name="morphe_dearrow_guidelines_popup_title">Follow the guidelines</string>
+    <string name="morphe_dearrow_guidelines_popup_content">Read the DeArrow guidelines before submitting or voting on titles and thumbnails</string>
+    <string name="morphe_dearrow_guidelines_popup_already_read">Already read</string>
+    <string name="morphe_dearrow_guidelines_popup_open">Show me</string>
+    <string name="morphe_dearrow_vote_title">DeArrow</string>
+    <string name="morphe_dearrow_vote_loading">Loading…</string>
+    <string name="morphe_dearrow_vote_fetch_failed">Could not load the titles and thumbnails of this video</string>
+    <string name="morphe_dearrow_vote_titles">Titles</string>
+    <string name="morphe_dearrow_vote_thumbnails">Thumbnails</string>
+    <string name="morphe_dearrow_vote_no_titles">No titles yet. Submit a title to be the first</string>
+    <string name="morphe_dearrow_vote_original_title">Original title</string>
+    <string name="morphe_dearrow_vote_original_thumbnail">Original thumbnail</string>
+    <!-- %s is a time of the video, such as 10:14.19 -->
+    <string name="morphe_dearrow_vote_thumbnail_time">Frame at %s</string>
+    <!-- %s is the upvotes minus the downvotes, and can be negative. -->
+    <string name="morphe_dearrow_vote_score">Score: %s</string>
+    <!-- Shown instead of the score of a title submitted by a user who is not yet verified. -->
+    <string name="morphe_dearrow_vote_unverified">Unverified</string>
+    <string name="morphe_dearrow_vote_locked">Locked</string>
+    <string name="morphe_dearrow_vote_upvote">Upvote</string>
+    <string name="morphe_dearrow_vote_downvote">Downvote</string>
+    <string name="morphe_dearrow_vote_new_title">New title</string>
+    <string name="morphe_dearrow_vote_new_title_hint">Type a title</string>
+    <string name="morphe_dearrow_vote_submit">Submit</string>
+    <string name="morphe_dearrow_vote_new_thumbnail">New thumbnail</string>
+    <!-- Button that moves the video to a nearby frame. %s is a signed number of seconds, such as -1 or +0.1 -->
+    <string name="morphe_dearrow_vote_frame_step">%s s</string>
+    <!-- %s is a time of the video, such as 10:14.19 -->
+    <string name="morphe_dearrow_vote_current_frame_content">Submit the frame at %s as a thumbnail?</string>
+    <string name="morphe_dearrow_vote_current_frame_playing">The video is playing. To submit the frame you see, pause the video first</string>
+    <string name="morphe_dearrow_vote_upvoted">Vote submitted to DeArrow</string>
+    <string name="morphe_dearrow_vote_downvoted">Downvote submitted to DeArrow</string>
+    <!-- %s is the reason sent by the DeArrow server, which is in English. -->
+    <string name="morphe_dearrow_vote_failed_reason">DeArrow did not accept the vote: %s</string>
+    <string name="morphe_dearrow_vote_failed_locked">This is locked, and can only be downvoted by VIP users</string>
+    <string name="morphe_dearrow_vote_failed_rate_limit">A vote for this video is still in progress. Try again in a moment</string>
+    <string name="morphe_dearrow_vote_failed_code">Could not submit the vote (status code: %s)</string>
+    <string name="morphe_dearrow_vote_failed_connection">Could not submit the vote. Check your connection and try again</string>
+    <string name="morphe_dearrow_submitting_title">Submitting titles and thumbnails</string>
+    <string name="morphe_dearrow_vote_time_step_title">Time adjustment step</string>
+    <string name="morphe_dearrow_vote_time_step_summary">Seek amount of the fine time adjustment buttons when submitting a thumbnail (in milliseconds)</string>
+    <string name="morphe_dearrow_vote_time_step_invalid">Value must be a positive number</string>
+    <string name="morphe_dearrow_private_user_id_title">Your private user ID</string>
+    <string name="morphe_dearrow_private_user_id_summary">The same user ID as SponsorBlock. This should be kept private. This is like a password and should not be shared with anyone. If someone has this, they can impersonate you</string>
+    <string name="morphe_dearrow_private_user_id_invalid">Private user ID must be at least 30 characters long</string>
+    <string name="morphe_dearrow_account_loading">Loading…</string>
+    <string name="morphe_dearrow_account_connection_failure">Account details are temporarily not available</string>
+    <string name="morphe_dearrow_account_username">Your username: &lt;b>%s&lt;/b></string>
+    <string name="morphe_dearrow_account_username_change">Tap here to change your username. The username is the same as on SponsorBlock</string>
+    <string name="morphe_dearrow_account_username_changed">Username successfully changed</string>
+    <string name="morphe_dearrow_account_username_change_error">Unable to change username: Status: %1$s %2$s</string>
+    <string name="morphe_dearrow_account_titles">You\'ve submitted &lt;b>%s&lt;/b> titles</string>
+    <string name="morphe_dearrow_account_titles_summary">Tap here to view your titles</string>
+    <string name="morphe_dearrow_account_thumbnails">You\'ve submitted &lt;b>%s&lt;/b> thumbnails</string>
+    <string name="morphe_dearrow_account_thumbnails_summary">Tap here to view your thumbnails</string>
 
     <!-- misc.playercontrols.playerControlsPatch -->
     <string name="morphe_restore_old_player_buttons_title">Restore old player button style</string>
@@ -1666,6 +1735,17 @@ Videos are requested by a short prefix of the hashed video ID, so the server can
 
     <!-- misc.gms.accountCredentialsInvalidTextPatch -->
     <string name="microg_offline_account_login_error">If you recently changed your account login details, then uninstall and reinstall MicroG</string>
+
+    <!-- misc.debugging.enableDebuggingPatch -->
+    <string name="morphe_debug_save_push_notifications_title">Save push notifications</string>
+    <string name="morphe_debug_save_push_notifications_summary">Saves received push notifications to a file in the app data. The file can include private information, such as notification texts and channel names</string>
+    <string name="morphe_debug_saved_push_notifications_title">Export saved push notifications</string>
+    <string name="morphe_debug_saved_push_notifications_summary">Export or clear the saved push notifications</string>
+    <string name="morphe_debug_saved_push_notifications_count">Saved push notifications: %s</string>
+    <string name="morphe_debug_saved_push_notifications_none_found">No saved push notifications found</string>
+    <string name="morphe_debug_saved_push_notifications_export_success">Push notifications exported successfully</string>
+    <string name="morphe_debug_saved_push_notifications_export_failed">Failed to export push notifications</string>
+    <string name="morphe_debug_saved_push_notifications_cleared">Saved push notifications cleared</string>
 
     <!-- misc.links.bypassLinkRedirectsPatch -->
     <string name="morphe_bypass_link_redirects_title">Bypass link redirects</string>

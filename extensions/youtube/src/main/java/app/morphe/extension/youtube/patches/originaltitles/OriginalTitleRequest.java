@@ -30,6 +30,7 @@ import app.morphe.extension.youtube.patches.dearrow.DeArrowBrandingRequest;
 import app.morphe.extension.youtube.patches.dearrow.DeArrowBrandingRequest.DeArrowTitle;
 import app.morphe.extension.youtube.patches.dearrow.DeArrowPatch;
 import app.morphe.extension.youtube.patches.dearrow.DeArrowPatch.DeArrowTitlesAvailability;
+import app.morphe.extension.youtube.patches.dearrow.DeArrowTitleIcon;
 import app.morphe.extension.youtube.patches.utils.FeedVideoCardsPatch;
 import app.morphe.extension.youtube.patches.utils.requests.ChannelIdRoutes;
 
@@ -186,6 +187,11 @@ final class OriginalTitleRequest {
                     if (fetchOriginal && !originalFetched) {
                         originalTitle = fetchOriginalTitle(videoId);
                     }
+                    if (!RestoreOriginalTitlesPatch.USE_DEARROW) {
+                        // So it's known if the DeArrow icon is shown for the thumbnail when the title is shown.
+                        // The DeArrow thumbnail is fetched with the DeArrow title otherwise.
+                        DeArrowTitleIcon.fetchThumbnailIfNeeded(videoId);
+                    }
                     return new Titles(deArrowTitle, fetchOriginal ? originalTitle : null);
                 }, Utils::runOnBackgroundThread);
                 // The cards of the video show the title that replaces its title,
@@ -198,6 +204,32 @@ final class OriginalTitleRequest {
             }
             return future;
         }
+    }
+
+    /**
+     * Fetches the titles of the video again, including its DeArrow branding, such as after a vote on its titles.
+     */
+    static CompletableFuture<Titles> fetchAgain(String videoId) {
+        synchronized (cache) {
+            DeArrowBrandingRequest.removeFromCache(videoId);
+            cache.remove(videoId);
+            retryTimes.remove(videoId);
+            failedFetchCounts.remove(videoId);
+            return fetch(videoId);
+        }
+    }
+
+    /**
+     * Does not start fetching the titles.
+     *
+     * @return The titles of the video, or null if not fetched.
+     */
+    @Nullable
+    static Titles getIfFetched(String videoId) {
+        CompletableFuture<Titles> future = cache.get(videoId);
+        return future != null && future.isDone() && !future.isCompletedExceptionally()
+                ? future.getNow(null)
+                : null;
     }
 
     /**
