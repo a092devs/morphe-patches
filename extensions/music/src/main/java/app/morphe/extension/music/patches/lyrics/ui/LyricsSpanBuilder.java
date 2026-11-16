@@ -344,7 +344,7 @@ public final class LyricsSpanBuilder {
     }
 
     private static void attachUniformSpacing(SpannableString text, Spacing spacing, int blockSplitOffset) {
-        if (text.length() <= 0) {
+        if (Utils.isEmpty(text)) {
             return;
         }
         text.setSpan(new UniformLineSpacingSpan(spacing, blockSplitOffset), 0, text.length(),
