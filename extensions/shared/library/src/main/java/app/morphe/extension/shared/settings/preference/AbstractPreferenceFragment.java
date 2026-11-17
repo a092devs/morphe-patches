@@ -300,7 +300,9 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                     if (findPreference(key) instanceof SettingPreference preference) {
                         preference.updateFromSetting();
                     }
-                    updateUIAvailability();
+
+                    // Updates Preferences availability only using the status of the settings.
+                    updatePreferenceScreen(getPreferenceScreen(), false);
                 } catch (Exception ex) {
                     Logger.printException(() -> "OnSharedPreferenceChangeListener failure", ex);
                 }
@@ -371,20 +373,6 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
     }
 
     /**
-     * Updates all Preferences values and their availability using the current values in {@link Setting}.
-     */
-    protected void updateUIToSettingValues() {
-        updatePreferenceScreen(getPreferenceScreen(), true);
-    }
-
-    /**
-     * Updates Preferences availability only using the status of {@link Setting}.
-     */
-    protected void updateUIAvailability() {
-        updatePreferenceScreen(getPreferenceScreen(), false);
-    }
-
-    /**
      * Syncs all UI Preferences to any {@link Setting} they represent.
      *
      * @param updateValues If the preferences show the values of the settings again,
@@ -407,14 +395,10 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                 String key = pref.getKey();
                 Setting<?> setting = Setting.getSettingFromPath(key);
                 if (setting != null) {
-                    updatePreferenceAvailability(pref, setting);
+                    pref.setEnabled(setting.isAvailable());
                 }
             }
         }
-    }
-
-    protected void updatePreferenceAvailability(Preference pref, Setting<?> setting) {
-        pref.setEnabled(setting.isAvailable());
     }
 
     /**
@@ -1070,7 +1054,8 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
             // otherwise the syncing of Setting -> UI
             // causes a callback to the listener even though nothing changed.
             initialize();
-            updateUIToSettingValues();
+            // Updates all Preferences values and their availability using the current values of the settings.
+            updatePreferenceScreen(getPreferenceScreen(), true);
 
             preferenceManager.getSharedPreferences().registerOnSharedPreferenceChangeListener(listener);
         } catch (Exception ex) {
