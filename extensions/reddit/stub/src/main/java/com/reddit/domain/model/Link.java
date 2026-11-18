@@ -1,5 +1,7 @@
 package com.reddit.domain.model;
 
+import java.util.List;
+
 @SuppressWarnings("unused")
 public final class Link extends ILink {
     public String getAuthor() {
@@ -15,7 +17,31 @@ public final class Link extends ILink {
     }
 
     public String getUrl() {
-      throw new UnsupportedOperationException("Stub");
+        throw new UnsupportedOperationException("Stub");
+    }
+
+    public String getTitle() {
+        throw new UnsupportedOperationException("Stub");
+    }
+
+    public String getSelftext() {
+        throw new UnsupportedOperationException("Stub");
+    }
+
+    public boolean isSelf() {
+        throw new UnsupportedOperationException("Stub");
+    }
+
+    public String getPostHint() {
+        throw new UnsupportedOperationException("Stub");
+    }
+
+    public PostGallery getGallery() {
+        throw new UnsupportedOperationException("Stub");
+    }
+
+    public List<Link> getCrossPostParentList() {
+        throw new UnsupportedOperationException("Stub");
     }
 
     public String getId() {
