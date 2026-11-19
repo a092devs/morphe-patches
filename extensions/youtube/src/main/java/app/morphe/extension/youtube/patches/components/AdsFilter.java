@@ -243,6 +243,10 @@ public final class AdsFilter extends Filter {
             return Utils.contains(path, "|button.e") && shortsPaidPromotionLabelBuffer.check(buffer).isFiltered();
         }
 
+        if (accessibility != null && (accessibility.startsWith("Sponsored") || accessibility.contains("Sponsored · ") || accessibility.contains("Sponsored - "))) {
+            return true;
+        }
+
         return !exceptions.matches(path);
     }
 
