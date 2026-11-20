@@ -232,7 +232,11 @@ public class ColorPickerPreference extends EditTextPreference implements Setting
             currentColor = Color.parseColor(colorString);
             StringSetting setting = getColorSetting();
             if (setting != null) {
-                setting.save(getColorString(currentColor, opacitySliderEnabled));
+                String newColor = getColorString(currentColor, opacitySliderEnabled);
+                if (setting.rebootApp && !newColor.equals(setting.get())) {
+                    AbstractPreferenceFragment.setRestartNeeded();
+                }
+                setting.save(newColor);
             }
             updateDialogColorDot();
             updateWidgetColorDot();
