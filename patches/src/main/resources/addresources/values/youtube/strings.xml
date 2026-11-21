@@ -67,7 +67,10 @@ Changes include:
     <string name="morphe_hide_account_menu_title">Enable Library / You bottom menu filter</string>
     <string name="morphe_hide_account_menu_filter_strings_title">Library / You bottom menu filter</string>
     <string name="morphe_hide_account_menu_filter_strings_summary">Enter the Library / You bottom menu names to filter by, separated by new lines</string>
+    <string name="morphe_hide_account_menu_badges_title">Hide Badges</string>
     <string name="morphe_hide_account_menu_downloads_title">Hide Downloads</string>
+    <string name="morphe_hide_account_menu_liked_videos_title">Hide \'Liked videos\'</string>
+    <string name="morphe_hide_account_menu_watch_later_title">Hide \'Watch later\'</string>
     <string name="morphe_hide_album_cards_title">Hide album cards</string>
     <string name="morphe_hide_album_cards_summary">Hides the album cards under the artist description</string>
     <string name="morphe_hide_artist_cards_title">Hide artist cards</string>
@@ -447,6 +450,8 @@ Limitations:
     <string name="morphe_minimal_comments_button_summary">Hides the sliding cards and its page selector, displayed on the comments button</string>
     <string name="morphe_hide_comments_timestamp_button_title">Hide Timestamp button</string>
     <string name="morphe_hide_comments_top_fans_button_title">Hide \'Top fans\' button</string>
+    <string name="morphe_hide_comments_topics_title">Hide \'Topics\'</string>
+    <string name="morphe_hide_comments_topics_summary">Hides the \'Topics\' filter bar option and the \'Topic\' comment previews below the video</string>
     <string name="morphe_hide_comments_translate_button_title">Hide Translate button</string>
     <string name="morphe_hide_comments_zero_state_title">Hide \'No comments yet\' message</string>
     <string name="morphe_sanitize_comments_highlighted_search_links_title">Sanitize highlighted search links</string>
