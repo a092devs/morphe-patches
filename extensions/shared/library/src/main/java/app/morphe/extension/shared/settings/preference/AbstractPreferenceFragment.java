@@ -345,7 +345,7 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
     private void attachNexFusionPreferences(PreferenceScreen screen) {
         if (screen == null) return;
         try {
-            Class<?> prefKt = Class.forName("io.github.nexfusion.morphe.shared.settings.PreferencesKt");
+            Class<?> prefKt = Class.forName("io.github.a092devs.nexfusion.morphe.shared.settings.PreferencesKt");
             java.lang.reflect.Method getPrefs = prefKt.getMethod("getPreferences");
             java.util.Set<?> set = (java.util.Set<?>) getPrefs.invoke(null);
             if (set != null && !set.isEmpty()) {

@@ -96,7 +96,7 @@ import app.morphe.extension.youtube.patches.spoof.SpoofOSNamePatch;
 import app.morphe.extension.youtube.settings.Settings;
 import app.morphe.extension.youtube.settings.YouTubeActivityHook;
 import app.morphe.extension.youtube.shared.NavigationBar;
-import io.github.nexfusion.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
+import io.github.a092devs.nexfusion.morphe.youtube.layout.buttons.navigation.NavigationBarPatchKt;
 import app.morphe.extension.youtube.shared.PlayerType;
 import app.morphe.extension.youtube.shared.ShortsPlayerState;
 

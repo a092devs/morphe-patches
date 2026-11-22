@@ -12,7 +12,7 @@ package app.morphe.extension.youtube.patches.dearrow;
 
 import static app.morphe.extension.shared.StringRef.str;
 
-import static io.github.nexfusion.morphe.youtube.misc.imageurlhook.CronetImageUrlHookKt.getHookedUrl;
+import static io.github.a092devs.nexfusion.morphe.youtube.misc.imageurlhook.CronetImageUrlHookKt.getHookedUrl;
 
 import android.net.Uri;
 import android.view.View;
