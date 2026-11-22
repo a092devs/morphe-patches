@@ -127,7 +127,7 @@ public class MorpheAboutPreference extends Preference {
         return str(key, args);
     }
 
-    private String createDialogHtml(List<WebLink> aboutLinks, @Nullable String currentVersion) {
+    private String createDialogHtml() {
         StringBuilder html = new StringBuilder(AboutDialogStyle.documentStart(getContext()))
                 .append(AboutDialogStyle.pageStart(true));
 
@@ -135,43 +135,32 @@ public class MorpheAboutPreference extends Preference {
 
         html.append("<div class=\"app-logo\">").append(AboutDialogStyle.LOGO).append("</div>");
 
-        // Names which part of Morphe this is, as Morphe itself names the manager.
-        html.append("<div><div class=\"app-name\">Morphe</div><div class=\"app-component\">")
-                .append(getString("morphe_settings_about_component"))
+        html.append("<div><div class=\"app-name\">NexFusion</div><div class=\"app-component\">")
+                .append("Modular Patches")
                 .append("</div></div></div>");
 
-        String appPatchesVersion = Utils.getPatchesReleaseVersion();
+        String appPatchesVersion = "5.0.1";
+        try {
+            Class<?> clazz = Class.forName("io.github.a092devs.nexfusion.BuildConfig");
+            appPatchesVersion = (String) clazz.getField("VERSION_NAME").get(null);
+        } catch (Throwable ignored) {
+            try {
+                Class<?> clazz = Class.forName("io.github.a092devs.nexfusion.patches.BuildConfig");
+                appPatchesVersion = (String) clazz.getField("VERSION_NAME").get(null);
+            } catch (Throwable ignored2) {
+                appPatchesVersion = Utils.getPatchesReleaseVersion();
+            }
+        }
+        if (appPatchesVersion == null || appPatchesVersion.isEmpty()) {
+            appPatchesVersion = "5.0.1";
+        }
 
         html.append("<div class=\"version-card\"><div class=\"version-label-row\"><span class=\"version-label\">")
                 .append(getString("morphe_settings_about_version"))
                 .append("</span>");
-        if (Utils.isPreReleasePatches()) {
-            html.append("<span class=\"badge\">")
-                    .append(useNonBreakingHyphens(getString("morphe_settings_about_prerelease")))
-                    .append("</span>");
-        }
         html.append("</div><div class=\"version\">")
                 .append(useNonBreakingHyphens(AboutDialogStyle.isolateLtr(appPatchesVersion)))
                 .append("</div>");
-
-        // Nothing stands here while the latest version is unknown: that is not the same as up to date.
-        if (currentVersion != null) {
-            if (appPatchesVersion.equalsIgnoreCase(currentVersion)) {
-                html.append("<div class=\"version-status\">")
-                        .append(getString("morphe_settings_about_links_dev_header_up_to_date"))
-                        .append("</div>");
-            } else {
-                html.append("<div class=\"version-status update\"><div class=\"version-status-text\">")
-                        .append(useNonBreakingHyphens(getString("morphe_settings_about_update_available",
-                                AboutDialogStyle.isolateLtr(currentVersion))))
-                        .append("<div class=\"version-hint\">")
-                        .append(getString("morphe_settings_about_update_hint"))
-                        .append("</div></div><a href=\"").append(MANAGER_LINK_PLACEHOLDER_URL)
-                        .append("\" class=\"update-button\">")
-                        .append(getString("morphe_patches_update_notice_dialog_update"))
-                        .append("</a></div>");
-            }
-        }
 
         html.append("</div></div>"); // end .version-card and .dialog-header
 
@@ -179,17 +168,10 @@ public class MorpheAboutPreference extends Preference {
                 .append(getString("morphe_settings_about_links_header"))
                 .append("</div><div class=\"tiles\">");
 
-        for (WebLink link : aboutLinks) {
-            appendTile(html, link.url, link.name,
-                    link.donation ? AboutDialogStyle.donateIcon() : AboutDialogStyle.linkIcon(link.url),
-                    link.donation);
-        }
+        appendTile(html, "https://github.com/a092devs/NexFusion", "GitHub", AboutDialogStyle.linkIcon("https://github.com/a092devs/NexFusion"), false);
+        appendTile(html, "https://github.com/a092devs", "Developer (@a092devs)", AboutDialogStyle.linkIcon("https://github.com/a092devs"), false);
+        appendTile(html, "https://t.me/a092devs", "Telegram (@a092devs)", AboutDialogStyle.linkIcon("https://t.me/a092devs"), false);
 
-        // The people behind the project close the same grid the links are in.
-        appendTile(html, CREDITS_LINK_PLACEHOLDER_URL, getString("morphe_settings_about_contributors"),
-                AboutDialogStyle.linkIcon(CREDITS_LINK_PLACEHOLDER_URL), false);
-        appendTile(html, SUPPORTERS_LINK_PLACEHOLDER_URL, getString("morphe_settings_about_supporters"),
-                AboutDialogStyle.linkIcon(SUPPORTERS_LINK_PLACEHOLDER_URL), false);
         html.append("</div></div>")
                 .append(AboutDialogStyle.pageEnd(getString("morphe_settings_about_close"), null))
                 .append(AboutDialogStyle.DOCUMENT_END);
@@ -197,67 +179,18 @@ public class MorpheAboutPreference extends Preference {
         return html.toString();
     }
 
+    private String createDialogHtml(List<WebLink> aboutLinks, @Nullable String currentVersion) {
+        return createDialogHtml();
+    }
+
     {
         setOnPreferenceClickListener(pref -> {
-            Context context = pref.getContext();
-
-            // Show a progress spinner if the social links are not fetched yet.
-            if (Utils.isNetworkConnected() && !AboutRoutes.hasFetchedLinks() && !AboutRoutes.hasFetchedPatchersVersion()) {
-                // Show a progress spinner, but only if the api fetch takes more than a half a second.
-                final long delayToShowProgressSpinner = 500;
-                ProgressDialog progress = new ProgressDialog(getContext());
-                progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-
-                Handler handler = new Handler(Looper.getMainLooper());
-                Runnable showDialogRunnable = progress::show;
-                handler.postDelayed(showDialogRunnable, delayToShowProgressSpinner);
-
-                Utils.runOnBackgroundThread(() ->
-                        fetchLinksAndShowDialog(context, handler, showDialogRunnable, progress));
-            } else {
-                // No network call required and can run now.
-                fetchLinksAndShowDialog(context, null, null, null);
-            }
-
+            new AboutWebViewDialog(getContext(), createDialogHtml(), false).show();
             return false;
         });
     }
 
-    private void fetchLinksAndShowDialog(Context context,
-                                         @Nullable Handler handler,
-                                         Runnable showDialogRunnable,
-                                         @Nullable ProgressDialog progress) {
-        List<WebLink> links = AboutRoutes.fetchAboutLinks();
-        String currentVersion = AboutRoutes.getLatestPatchesVersion();
-        String htmlDialog = createDialogHtml(links, currentVersion);
 
-        // Enable to randomly force a delay to debug the spinner logic.
-        final boolean debugSpinnerDelayLogic = false;
-        //noinspection ConstantConditions
-        if (debugSpinnerDelayLogic && handler != null && Math.random() < 0.5f) {
-            Utils.doNothingForDuration((long) (Math.random() * 4000));
-        }
-
-        Utils.runOnMainThreadNowOrLater(() -> {
-            if (handler != null) {
-                handler.removeCallbacks(showDialogRunnable);
-            }
-
-            // Don't continue if the activity is done. To test this tap the
-            // dialog and immediately press back before the dialog can show.
-            if (context instanceof Activity activity) {
-                if (activity.isFinishing() || activity.isDestroyed()) {
-                    Logger.printDebug(() -> "Not showing about dialog, activity is closed");
-                    return;
-                }
-            }
-
-            if (progress != null && progress.isShowing()) {
-                progress.dismiss();
-            }
-            new AboutWebViewDialog(getContext(), htmlDialog, false).show();
-        });
-    }
 
     public MorpheAboutPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
