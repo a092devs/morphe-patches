@@ -58,6 +58,7 @@ import app.morphe.extension.shared.StringRef;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.patches.components.BufferAsciiStrings;
 import app.morphe.extension.shared.patches.components.LithoFilterPatch.LithoLogging;
+import app.morphe.extension.shared.patches.glassmenus.GlassMenusPatch;
 import app.morphe.extension.shared.theme.ThemeUtils;
 import app.morphe.extension.shared.ui.Dim;
 import app.morphe.extension.youtube.patches.AddToQueuePatch;
@@ -557,6 +558,9 @@ public final class FlyoutUtils {
             OnTheGoPatch.onFlyoutCreated();
         }
         flyoutPopupWindow = popupWindow;
+        if (GlassMenusPatch.isPatchIncluded()) {
+            GlassMenusPatch.onPopupWindow(popupWindow);
+        }
 
         // The app can set the content view after this call, in the same method that shows the popup.
         Utils.runOnMainThreadDelayed(() -> {
