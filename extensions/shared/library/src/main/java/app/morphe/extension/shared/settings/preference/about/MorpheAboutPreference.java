@@ -106,6 +106,31 @@ public class MorpheAboutPreference extends Preference {
         return str(key, args);
     }
 
+    private static String getAppPatchesVersion() {
+        for (String className : new String[]{
+                "io.github.a092devs.nexfusion.patches.BuildConfig",
+                "io.github.a092devs.nexfusion.BuildConfig",
+                "io.github.nexfusion.patches.BuildConfig",
+                "io.github.nexfusion.BuildConfig"
+        }) {
+            try {
+                Class<?> clazz = Class.forName(className, false, MorpheAboutPreference.class.getClassLoader());
+                Object version = clazz.getField("VERSION_NAME").get(null);
+                if (version instanceof String s && !s.isEmpty()) {
+                    return s;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        String releaseVer = Utils.getPatchesReleaseVersion();
+        if (releaseVer != null && !releaseVer.isEmpty()) {
+            return releaseVer;
+        }
+
+        return "Unknown";
+    }
+
     private String createDialogHtml() {
         StringBuilder html = new StringBuilder(AboutDialogStyle.documentStart(getContext()))
                 .append(AboutDialogStyle.pageStart(true));
@@ -118,19 +143,7 @@ public class MorpheAboutPreference extends Preference {
                 .append("Modular Patches")
                 .append("</div></div></div>");
 
-        String appPatchesVersion = "5.0.1";
-        try {
-            Class<?> clazz = Class.forName("io.github.a092devs.nexfusion.BuildConfig");
-            appPatchesVersion = (String) clazz.getField("VERSION_NAME").get(null);
-        } catch (Throwable ignored) {
-            try {
-                Class<?> clazz = Class.forName("io.github.a092devs.nexfusion.patches.BuildConfig");
-                appPatchesVersion = (String) clazz.getField("VERSION_NAME").get(null);
-            } catch (Throwable ignored2) {
-                String ver = Utils.getPatchesReleaseVersion();
-                if (ver != null && !ver.isEmpty()) appPatchesVersion = ver;
-            }
-        }
+        String appPatchesVersion = getAppPatchesVersion();
 
         html.append("<div class=\"version-card\"><div class=\"version-label-row\"><span class=\"version-label\">")
                 .append(getString("morphe_settings_about_version"))
