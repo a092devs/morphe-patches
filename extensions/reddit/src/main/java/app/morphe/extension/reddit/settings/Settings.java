@@ -13,6 +13,7 @@ import static app.morphe.extension.shared.settings.Setting.parent;
 import static app.morphe.extension.shared.settings.Setting.parentNot;
 
 import app.morphe.extension.reddit.patches.AutoModeratorCommentsPatch.AutoModeratorComments;
+import app.morphe.extension.reddit.patches.CollapseAllCommentsPatch.CollapseAllScope;
 import app.morphe.extension.reddit.patches.FeedAutoScrollPatch.ScrollSpeed;
 import app.morphe.extension.reddit.patches.PostSidePanelPatch.FeedDim;
 import app.morphe.extension.reddit.patches.PostSidePanelPatch.PanelWidth;
@@ -69,6 +70,8 @@ public class Settings extends BaseSettings {
 
     // Layout
     public static final EnumSetting<AutoModeratorComments> AUTOMODERATOR_COMMENTS = new EnumSetting<>("morphe_automoderator_comments", AutoModeratorComments.SHOW);
+    public static final BooleanSetting COLLAPSE_ALL_COMMENTS = new BooleanSetting("morphe_collapse_all_comments", TRUE);
+    public static final EnumSetting<CollapseAllScope> COLLAPSE_ALL_COMMENTS_SCOPE = new EnumSetting<>("morphe_collapse_all_comments_scope", CollapseAllScope.TOP_COMMENTS, parent(COLLAPSE_ALL_COMMENTS));
     public static final BooleanSetting COPY_TEXT = new BooleanSetting("morphe_copy_text", FALSE, true, "morphe_copy_text_user_dialog_message");
     public static final BooleanSetting CUSTOM_FONT = new BooleanSetting("morphe_custom_font", FALSE, true);
     public static final StringSetting CUSTOM_FONT_FILE_PATH = new StringSetting("morphe_custom_font_file_path", "", true);
@@ -88,6 +91,7 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting HIDE_INTERACTIVE_POSTS = new BooleanSetting("morphe_hide_interactive_posts", FALSE, true);
     public static final BooleanSetting HIDE_JOIN_CONVERSATION_BUTTON = new BooleanSetting("morphe_hide_join_conversation_button", FALSE);
     public static final BooleanSetting HIDE_MEDIA_VIEWER_OVERLAY = new BooleanSetting("morphe_hide_media_viewer_overlay", FALSE);
+    public static final BooleanSetting HIDE_PEOPLE_ALSO_SEARCH_FOR_SECTION = new BooleanSetting("morphe_hide_people_also_search_for_section", FALSE, true);
     public static final BooleanSetting HIDE_POPULAR_TAB = new BooleanSetting("morphe_hide_popular_tab", FALSE, true, parentNot(DISABLE_MODERN_HOME));
     public static final BooleanSetting HIDE_RELATED_POSTS_SECTION = new BooleanSetting("morphe_hide_related_posts_section", FALSE, true);
     public static final BooleanSetting HIDE_TRENDING_SHELVES = new BooleanSetting("morphe_hide_trending_shelves", FALSE, true);

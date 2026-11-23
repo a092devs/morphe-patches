@@ -13,6 +13,7 @@ import android.content.Context;
 import android.preference.PreferenceScreen;
 
 import app.morphe.extension.reddit.patches.AutoModeratorCommentsPatch;
+import app.morphe.extension.reddit.patches.CollapseAllCommentsPatch;
 import app.morphe.extension.reddit.patches.CopyTextPatch;
 import app.morphe.extension.reddit.patches.CustomFontPatch;
 import app.morphe.extension.reddit.patches.DisableModernHomePatch;
@@ -28,6 +29,7 @@ import app.morphe.extension.reddit.patches.HideCommunitiesShelfPatch;
 import app.morphe.extension.reddit.patches.HideHomeTabsPatch;
 import app.morphe.extension.reddit.patches.HideInteractivePostsPatch;
 import app.morphe.extension.reddit.patches.HideMediaViewerComponentsPatch;
+import app.morphe.extension.reddit.patches.HidePeopleAlsoSearchForSectionPatch;
 import app.morphe.extension.reddit.patches.HideRelatedPostsSectionPatch;
 import app.morphe.extension.reddit.patches.HideTrendingShelvesPatch;
 import app.morphe.extension.reddit.patches.HideVideosForYouShelfPatch;
@@ -74,6 +76,7 @@ public class LayoutPreferenceCategory extends ConditionalPreferenceCategory {
                 HideCommunitiesShelfPatch.isPatchIncluded() ||
                 HideHomeTabsPatch.isPatchIncluded() ||
                 HideInteractivePostsPatch.isPatchIncluded() ||
+                HidePeopleAlsoSearchForSectionPatch.isPatchIncluded() ||
                 HideRelatedPostsSectionPatch.isPatchIncluded() ||
                 HideTrendingShelvesPatch.isPatchIncluded() ||
                 HideVideosForYouShelfPatch.isPatchIncluded() ||
@@ -92,6 +95,7 @@ public class LayoutPreferenceCategory extends ConditionalPreferenceCategory {
                 FlipPostActionBarPatch.isPatchIncluded() ||
                 FullScreenReplyPatch.isPatchIncluded() ||
                 AutoModeratorCommentsPatch.isPatchIncluded() ||
+                CollapseAllCommentsPatch.isPatchIncluded() ||
                 RememberCollapsedCommentsPatch.isPatchIncluded() ||
                 TabletGridFeedPatch.isPatchIncluded() ||
                 FeedAutoScrollPatch.isPatchIncluded() ||
@@ -173,6 +177,13 @@ public class LayoutPreferenceCategory extends ConditionalPreferenceCategory {
             addPreference(new BooleanSettingPreference(
                     context,
                     Settings.HIDE_INTERACTIVE_POSTS
+            ));
+        }
+
+        if (HidePeopleAlsoSearchForSectionPatch.isPatchIncluded()) {
+            addPreference(new BooleanSettingPreference(
+                    context,
+                    Settings.HIDE_PEOPLE_ALSO_SEARCH_FOR_SECTION
             ));
         }
 
@@ -314,6 +325,17 @@ public class LayoutPreferenceCategory extends ConditionalPreferenceCategory {
             addPreference(new CustomDialogListPreference(
                     context,
                     Settings.AUTOMODERATOR_COMMENTS
+            ));
+        }
+
+        if (CollapseAllCommentsPatch.isPatchIncluded()) {
+            addPreference(new BooleanSettingPreference(
+                    context,
+                    Settings.COLLAPSE_ALL_COMMENTS
+            ));
+            addPreference(new CustomDialogListPreference(
+                    context,
+                    Settings.COLLAPSE_ALL_COMMENTS_SCOPE
             ));
         }
 

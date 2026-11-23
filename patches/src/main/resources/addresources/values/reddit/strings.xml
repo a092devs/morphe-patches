@@ -122,6 +122,8 @@ To use an older version, you must &lt;b>uninstall&lt;/b> Reddit and then install
     <string name="morphe_hide_popular_tab_summary">Hides the Popular tab of the home feed</string>
     <string name="morphe_hide_interactive_posts_title">Hide interactive posts</string>
     <string name="morphe_hide_interactive_posts_summary">Hides game and other interactive app posts from the home feed and other recommended feeds</string>
+    <string name="morphe_hide_people_also_search_for_section_title">Hide \'People also search for\' section</string>
+    <string name="morphe_hide_people_also_search_for_section_summary">Hides the \'People also search for\' section from search results</string>
     <string name="morphe_hide_related_posts_section_title">Hide \'Related Posts\' section</string>
     <string name="morphe_hide_related_posts_section_summary">Hides the \'Related Posts\' section below the comments of a post</string>
     <string name="morphe_hide_trending_shelves_title">Hide Trending shelves</string>
@@ -257,6 +259,13 @@ To use an older version, you must &lt;b>uninstall&lt;/b> Reddit and then install
     <string name="morphe_automoderator_comments_entry_show">Show</string>
     <string name="morphe_automoderator_comments_entry_collapse">Collapse</string>
     <string name="morphe_automoderator_comments_entry_hide">Hide</string>
+    <string name="morphe_collapse_all_comments_title">Collapse all comments button</string>
+    <string name="morphe_collapse_all_comments_summary">Shows a button next to the comment count of a post that collapses or expands all comments</string>
+    <string name="morphe_collapse_all_comments_scope_title">What the button collapses</string>
+    <string name="morphe_collapse_all_comments_scope_entry_top_comments">Top comments (hides all replies)</string>
+    <string name="morphe_collapse_all_comments_scope_entry_replies">Replies (top comments stay open)</string>
+    <string name="morphe_collapse_all_comments_scope_entry_nested_replies">Replies to replies (direct replies stay open)</string>
+    <string name="morphe_collapse_all_comments_button">Collapse or expand all comments</string>
     <string name="morphe_remember_collapsed_comments_title">Remember collapsed comments</string>
     <string name="morphe_remember_collapsed_comments_summary">Comments you collapse stay collapsed when you reopen the post</string>
     <string name="morphe_app_icon_title">App icon</string>
