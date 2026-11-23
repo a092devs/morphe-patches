@@ -100,23 +100,27 @@ final class AboutStylesheet {
             .close:active {
                 background: rgba(128, 128, 128, 0.12);
             }
-            /* Header. The About dialog fills it with the logo beside the name, the people dialogs with a title. */
+            /* Header. The About dialog fills it with the logo above the name, the people dialogs with a title. */
             .dialog-header {
                 padding: 20px 16px 0;
             }
             .about-header {
                 display: flex;
+                flex-direction: column;
                 align-items: center;
-                gap: 16px;
+                text-align: center;
+                gap: 12px;
+                margin-bottom: 8px;
             }
             .app-logo {
-                width: 64px;
-                height: 64px;
+                width: 76px;
+                height: 76px;
                 flex-shrink: 0;
-                border-radius: 20px;
-                /* Leaves the mark as large in its tile as Morphe itself draws it. */
-                padding: 12px;
-                background: rgba(128, 128, 128, 0.12);
+                border-radius: 22px;
+                padding: 8px;
+                background: #090D18;
+                border: 1px solid rgba(56, 189, 248, 0.35);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             }
             .app-logo svg {
                 display: block;
@@ -127,11 +131,13 @@ final class AboutStylesheet {
                 font-size: 24px;
                 font-weight: 700;
                 line-height: 30px;
+                letter-spacing: -0.02em;
             }
             .app-component {
                 font-size: 14px;
                 line-height: 20px;
-                opacity: 0.7;
+                opacity: 0.75;
+                color: #38BDF8;
             }
             .dialog-title {
                 font-size: 20px;

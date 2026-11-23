@@ -363,12 +363,12 @@ public abstract class AbstractPreferenceFragment extends PreferenceFragment {
                             } catch (Throwable ignored) {}
                         }
                     } catch (Throwable t) {
-                        Logger.printException(() -> "Error building NexFusion preference item " + item, t);
+                        Logger.printInfo(() -> "Error building NexFusion preference item " + item + ": " + t.getMessage());
                     }
                 }
             }
         } catch (Throwable t) {
-            Logger.printException(() -> "attachNexFusionPreferences failure", t);
+            Logger.printInfo(() -> "attachNexFusionPreferences failure: " + t.getMessage());
         }
     }
 
