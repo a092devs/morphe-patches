@@ -164,24 +164,19 @@ final class AboutDialogStyle {
             + "});});</script>";
 
     /**
-     * NexFusion vector mark (Silicon die + Circuit Monogram N), drawn in place so it needs no network and is there from the start.
+     * The mark of the Morphe logo, drawn in place so it needs no network and is there from the start.
      */
-    static final String LOGO = "<svg viewBox='0 0 108 108' xmlns='http://www.w3.org/2000/svg'>"
-            + "<path fill='#1E293B' stroke='#334155' stroke-width='1.5' stroke-linejoin='round' d='M 54,18 L 84,35 L 84,73 L 54,90 L 24,73 L 24,35 Z'/>"
-            + "<path fill='#334155' d='M 54,19 L 83,35 L 83,73 L 54,89 L 25,73 L 25,35 Z'/>"
-            + "<path fill='#090D18' d='M 54,23 L 79,37 L 79,71 L 54,85 L 29,71 L 29,37 Z'/>"
-            + "<path fill='none' stroke='#1E293B' stroke-width='1.2' d='M 54,25 L 77,38 L 77,70 L 54,83 L 31,70 L 31,38 Z'/>"
-            + "<path fill='none' stroke='#0284C7' stroke-width='1.6' stroke-linecap='round' d='M 54,24 L 54,30 M 54,78 L 54,84'/>"
-            + "<path fill='#1E40AF' d='M 37,38 L 41,38 L 41,70 L 37,70 Z'/>"
-            + "<path fill='#0284C7' d='M 41,38 L 47,38 L 47,70 L 41,70 Z'/>"
-            + "<path fill='#06B6D4' d='M 47,38 L 61,59 L 61,49 L 47,38 Z'/>"
-            + "<path fill='#38BDF8' d='M 47,49 L 61,70 L 61,59 L 47,38 Z'/>"
-            + "<path fill='none' stroke='#BAE6FD' stroke-width='1.2' stroke-linecap='round' d='M 47,38 L 61,70'/>"
-            + "<path fill='#0284C7' d='M 61,38 L 67,38 L 67,70 L 61,70 Z'/>"
-            + "<path fill='#2563EB' d='M 67,38 L 71,38 L 71,70 L 67,70 Z'/>"
-            + "<path fill='#FFFFFF' d='M 35,36 L 39,36 L 39,40 L 35,40 Z M 69,68 L 73,68 L 73,72 L 69,72 Z'/>"
-            + "<path fill='#38BDF8' d='M 69,36 L 73,36 L 73,40 L 69,40 Z M 35,68 L 39,68 L 39,72 L 35,72 Z'/>"
-            + "<path fill='none' stroke='#38BDF8' stroke-width='1.2' stroke-linecap='round' d='M 31,54 L 35,54 M 73,54 L 77,54'/>"
+    static final String LOGO = "<svg viewBox='63 88 386 340'>"
+            + "<defs><linearGradient id='morphe-mark' gradientUnits='userSpaceOnUse' x1='83' y1='216' x2='429' y2='216'>"
+            + "<stop offset='0' stop-color='" + MORPHE_BLUE + "'/><stop offset='1' stop-color='" + MORPHE_TEAL + "'/>"
+            + "</linearGradient></defs>"
+            + "<path fill='" + MORPHE_BLUE + "' d='M123,140 c-21,0 -39,17 -40,38 v192 c1,21 19,38 40,38 21,0 39,-17 "
+            + "40,-38 V178 c-1,-21 -19,-38 -40,-38 z'/>"
+            + "<path fill='" + MORPHE_TEAL + "' d='M349,285 v85 c1,21 19,38 40,38 21,0 39,-17 40,-38 V182 c-11,-14 "
+            + "-74,63 -80,103 z'/>"
+            + "<path fill='url(#morphe-mark)' d='M127,108 c-34,0 -44,25 -44,40 v54 c30,-33 75,27 80,33 28,32 44,87 "
+            + "93,89 48,-2 67,-56 93,-89 0,0 45,-74 80,-80 0,-28 -11,-47 -44,-47 -34,0 -58,50 -75,72 -17,22 -25,46 "
+            + "-54,46 -29,0 -38,-25 -54,-46 -17,-22 -41,-72 -75,-72 z'/>"
             + "</svg>";
 
     /**
