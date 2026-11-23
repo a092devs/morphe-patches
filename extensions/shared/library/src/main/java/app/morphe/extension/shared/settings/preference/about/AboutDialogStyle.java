@@ -38,10 +38,11 @@ final class AboutDialogStyle {
     }
 
     /**
-     * NexFusion logo accent colors.
+     * Morphe logo gradient, which the logo is drawn in and an app without a usable accent of its
+     * own takes its accent from.
      */
-    private static final String NEXFUSION_BLUE = "#0284C7";
-    private static final String NEXFUSION_CYAN = "#38BDF8";
+    private static final String MORPHE_BLUE = "#1E5AA8";
+    private static final String MORPHE_TEAL = "#00AFAE";
 
     // The yellow of a Mega Supporter, the warning color of Morphe's own dark and light themes.
     private static final String MEGA_DARK = "#F5BD48";
@@ -345,7 +346,7 @@ final class AboutDialogStyle {
      */
     @ColorInt
     private static int accentColor(Context context) {
-        @ColorInt int fallback = Color.parseColor(Utils.isDarkModeEnabled() ? NEXFUSION_CYAN : NEXFUSION_BLUE);
+        @ColorInt int fallback = Color.parseColor(Utils.isDarkModeEnabled() ? MORPHE_TEAL : MORPHE_BLUE);
 
         TypedValue value = new TypedValue();
         if (!context.getTheme().resolveAttribute(android.R.attr.colorAccent, value, true)) {
