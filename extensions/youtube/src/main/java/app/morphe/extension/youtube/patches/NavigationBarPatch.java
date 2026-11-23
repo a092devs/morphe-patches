@@ -223,7 +223,7 @@ public final class NavigationBarPatch {
      * Injection point.
      */
     public static String swapCreateWithNotificationButton(String osName) {
-        return osName;
+        return SpoofOSNamePatch.getOSName(SWAP_CREATE_WITH_NOTIFICATIONS_BUTTON);
     }
 
     /**
@@ -234,6 +234,24 @@ public final class NavigationBarPatch {
 
         if (button == NavigationBar.NavigationButton.NOTIFICATIONS) {
             notificationsTabCreated = true;
+            try {
+                int textId = tabView.getResources().getIdentifier("text", "id", tabView.getContext().getPackageName());
+                if (textId != 0) {
+                    View text = tabView.findViewById(textId);
+                    if (text != null) {
+                        text.setVisibility(View.GONE);
+                    }
+                }
+                if (tabView instanceof ViewGroup) {
+                    ViewGroup viewGroup = (ViewGroup) tabView;
+                    for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                        View child = viewGroup.getChildAt(i);
+                        if (child instanceof TextView) {
+                            child.setVisibility(View.GONE);
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
         }
 
         if (SHOW_SEARCH_BUTTON && button == NavigationBar.NavigationButton.SEARCH) {
@@ -1600,11 +1618,28 @@ public final class NavigationBarPatch {
      *
      * @param messageLite MessageLite class of PivotBarItemRenderer.
      */
-    public static void createPivotBarItems(MessageLite messageLite) {
+    public static void createPivotBarItems(Object messageLite) {
         if (!SHOW_SEARCH_BUTTON && !SHOW_SETTINGS_BUTTON && !SHOW_WATCH_LATER_BUTTON) return;
 
         try {
-            var renderer = PivotBarItemRenderer.parseFrom(messageLite.toByteArray());
+            byte[] bytes;
+            if (messageLite instanceof byte[]) {
+                bytes = (byte[]) messageLite;
+            } else if (messageLite instanceof MessageLite) {
+                bytes = ((MessageLite) messageLite).toByteArray();
+            } else {
+                bytes = (byte[]) messageLite.getClass().getMethod("toByteArray").invoke(messageLite);
+            }
+
+            var item = PivotBarItemBytes.parseFrom(bytes);
+            if (!item.hasPivotBarItemRenderer()) {
+                if (item.hasPivotBarIconOnlyItemRenderer()) {
+                    createIconOnlyPivotBarItems(item.getPivotBarIconOnlyItemRenderer().toByteArray());
+                }
+                return;
+            }
+
+            var renderer = PivotBarItemRenderer.parseFrom(item.getPivotBarItemRenderer());
             var iconName = renderer.getIcon().getYtIconType().name();
             if (!NavigationBar.NavigationButton.HOME.ytEnumNames.contains(iconName)) return;
 
@@ -1671,11 +1706,31 @@ public final class NavigationBarPatch {
      *
      * @param messageLite MessageLite class of PivotBarIconOnlyItemRenderer.
      */
-    public static void createIconOnlyPivotBarItems(MessageLite messageLite) {
+    public static void createIconOnlyPivotBarItems(Object messageLite) {
         if (!SHOW_SEARCH_BUTTON && !SHOW_SETTINGS_BUTTON && !SHOW_WATCH_LATER_BUTTON) return;
 
         try {
-            var renderer = PivotBarIconOnlyItemRendererBytes.parseFrom(messageLite.toByteArray());
+            byte[] bytes;
+            if (messageLite instanceof byte[]) {
+                bytes = (byte[]) messageLite;
+            } else if (messageLite instanceof MessageLite) {
+                bytes = ((MessageLite) messageLite).toByteArray();
+            } else {
+                bytes = (byte[]) messageLite.getClass().getMethod("toByteArray").invoke(messageLite);
+            }
+
+            try {
+                var item = PivotBarItemBytes.parseFrom(bytes);
+                if (item.hasPivotBarIconOnlyItemRenderer()) {
+                    bytes = item.getPivotBarIconOnlyItemRenderer().toByteArray();
+                } else if (item.hasPivotBarItemRenderer()) {
+                    createPivotBarItems(item.getPivotBarItemRenderer().toByteArray());
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
+
+            var renderer = PivotBarIconOnlyItemRendererBytes.parseFrom(bytes);
             var iconName = Icon.parseFrom(renderer.getIcon()).getYtIconType().name();
             if (!NavigationBar.NavigationButton.HOME.ytEnumNames.contains(iconName)) return;
 
@@ -1736,7 +1791,7 @@ public final class NavigationBarPatch {
      */
     @Nullable
     @SuppressWarnings("SameReturnValue")
-    private static Object buildPivotBarItem(byte[] pivotBarItem) {
+    public static Object buildPivotBarItem(byte[] pivotBarItem) {
         return null;
     }
 

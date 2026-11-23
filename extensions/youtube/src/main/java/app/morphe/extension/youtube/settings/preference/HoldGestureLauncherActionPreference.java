@@ -44,11 +44,25 @@ public class HoldGestureLauncherActionPreference extends CustomDialogListPrefere
         init();
     }
 
+    @Override
+    protected void onAttachedToHierarchy(android.preference.PreferenceManager preferenceManager) {
+        super.onAttachedToHierarchy(preferenceManager);
+        init();
+    }
+
     private void init() {
         CharSequence[] entries = getEntries();
         CharSequence[] entryValues = getEntryValues();
+        String key = getKey();
+        if (entries == null || entryValues == null || key == null) {
+            return;
+        }
+        Setting<?> setting = Setting.getSettingFromPath(key);
+        if (setting == null) {
+            return;
+        }
         // The preference value is only loaded once it is attached to the hierarchy.
-        String currentValue = String.valueOf(Setting.getSettingFromPath(getKey()).get());
+        String currentValue = String.valueOf(setting.get());
         List<CharSequence> shownEntries = new ArrayList<>(entries.length);
         List<CharSequence> shownValues = new ArrayList<>(entryValues.length);
 

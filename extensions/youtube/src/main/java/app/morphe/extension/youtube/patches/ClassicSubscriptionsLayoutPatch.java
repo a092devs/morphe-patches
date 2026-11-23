@@ -247,11 +247,11 @@ public final class ClassicSubscriptionsLayoutPatch {
     static int indexOfLibraryButton(List<Object> list) {
         for (int i = 0, size = list.size(); i < size; i++) {
             PivotBarItemInfo info = getPivotBarItemInfo(list.get(i));
-            if (info != null && LIBRARY_BROWSE_ID.equals(info.id())) {
+            if (info != null && (LIBRARY_BROWSE_ID.equals(info.id()) || "FEshared".equals(info.id()) || "FEhistory".equals(info.id()) || "FEguide".equals(info.id()) || "FEprofile".equals(info.id()) || (info.label() != null && "You".equalsIgnoreCase(info.label().trim())))) {
                 return i;
             }
         }
-        return list.size();
+        return Math.max(0, list.size() - 1);
     }
 
     /**
