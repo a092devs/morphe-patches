@@ -226,6 +226,7 @@ public class Settings extends SharedYouTubeSettings {
     public static final BooleanSetting HIDE_YOUTUBE_DOODLES = new BooleanSetting("morphe_hide_youtube_doodles", TRUE, true, "morphe_hide_youtube_doodles_user_dialog_message");
     public static final IntegerSetting PLAYBACK_IN_FEEDS = new IntegerSetting("morphe_playback_in_feeds", PlaybackInFeedsPatch.MODE_ALWAYS_ON, true);
     public static final BooleanSetting PLAYBACK_IN_FEEDS_IMPORTED = new BooleanSetting("morphe_playback_in_feeds_imported", FALSE, false, false);
+    public static final BooleanSetting PLAYBACK_IN_FEEDS_SEEK_BUTTONS = new BooleanSetting("morphe_playback_in_feeds_seek_buttons", TRUE);
     public static final BooleanSetting RESTORE_ORIGINAL_TITLES = new BooleanSetting("morphe_restore_original_titles", FALSE, true);
     public static final BooleanSetting DISABLE_AUTO_FEED_REFRESH = new BooleanSetting("morphe_disable_auto_feed_refresh", FALSE);
     public static final BooleanSetting UNGROUP_NOTIFICATIONS = new BooleanSetting("morphe_ungroup_notifications", FALSE);
@@ -294,10 +295,12 @@ public class Settings extends SharedYouTubeSettings {
     // Keyword filter
     public static final BooleanSetting HIDE_KEYWORD_CONTENT_COMMENTS = new BooleanSetting("morphe_hide_keyword_content_comments", FALSE);
     public static final BooleanSetting HIDE_KEYWORD_CONTENT_HOME = new BooleanSetting("morphe_hide_keyword_content_home", FALSE);
+    public static final BooleanSetting HIDE_KEYWORD_CONTENT_POSTS = new BooleanSetting("morphe_hide_keyword_content_posts", FALSE);
     public static final BooleanSetting HIDE_KEYWORD_CONTENT_SEARCH = new BooleanSetting("morphe_hide_keyword_content_search", FALSE);
     public static final BooleanSetting HIDE_KEYWORD_CONTENT_SUBSCRIPTIONS = new BooleanSetting("morphe_hide_keyword_content_subscriptions", FALSE);
     public static final StringSetting HIDE_KEYWORD_CONTENT_PHRASES = new StringSetting("morphe_hide_keyword_content_phrases", "",
-            parentsAny(HIDE_KEYWORD_CONTENT_COMMENTS, HIDE_KEYWORD_CONTENT_HOME, HIDE_KEYWORD_CONTENT_SEARCH, HIDE_KEYWORD_CONTENT_SUBSCRIPTIONS));
+            parentsAny(HIDE_KEYWORD_CONTENT_COMMENTS, HIDE_KEYWORD_CONTENT_HOME, HIDE_KEYWORD_CONTENT_POSTS,
+                    HIDE_KEYWORD_CONTENT_SEARCH, HIDE_KEYWORD_CONTENT_SUBSCRIPTIONS));
     public static final LongSetting KEYWORD_HIDE_COUNT_HOME = new LongSetting("morphe_keyword_hide_count_home", 0L);
     public static final LongSetting KEYWORD_HIDE_COUNT_SUBSCRIPTIONS = new LongSetting("morphe_keyword_hide_count_subscriptions", 0L);
     public static final LongSetting KEYWORD_HIDE_COUNT_SEARCH = new LongSetting("morphe_keyword_hide_count_search", 0L);
@@ -432,7 +435,7 @@ public class Settings extends SharedYouTubeSettings {
     public static final BooleanSetting COPY_VIDEO_TITLE = new BooleanSetting("morphe_copy_video_title", TRUE, true);
     public static final BooleanSetting COPY_COMMENTS = new BooleanSetting("morphe_copy_comments", TRUE, true);
     public static final BooleanSetting COPY_SELECT_TEXT = new BooleanSetting("morphe_copy_select_text", TRUE, true);
-    public static final BooleanSetting SEARCH_COMMENTS = new BooleanSetting("morphe_search_comments", TRUE);
+    public static final BooleanSetting COMMENT_SEARCH = new BooleanSetting("morphe_comment_search", TRUE);
 
     // Feed video actions
     public static final BooleanSetting FEED_LONG_PRESS_MENU = new BooleanSetting("morphe_feed_long_press_menu", FALSE, true);
@@ -721,6 +724,7 @@ public class Settings extends SharedYouTubeSettings {
     public static final BooleanSetting SHOW_WATCH_LATER_BUTTON = new BooleanSetting("morphe_show_watch_later_button", FALSE, true, parentNot(HIDE_NAVIGATION_BAR));
     public static final BooleanSetting SHOW_SETTINGS_BUTTON = new BooleanSetting("morphe_show_settings_button", FALSE, true, parentNot(HIDE_NAVIGATION_BAR));
     public static final BooleanSetting SHOW_SETTINGS_BUTTON_TYPE = new BooleanSetting("morphe_show_settings_button_type", FALSE, true, parent(SHOW_SETTINGS_BUTTON));
+    public static final BooleanSetting YOU_BUTTON_ACCOUNT_SWITCHER = new BooleanSetting("morphe_you_button_account_switcher", FALSE, true, parentNot(HIDE_NAVIGATION_BAR));
     public static final StringSetting NAVIGATION_BUTTONS_ORDER = new StringSetting("morphe_navigation_buttons_order", "", true, parentNot(HIDE_NAVIGATION_BAR));
     public static final StringSetting NAVIGATION_BUTTONS_DISCOVERED = new StringSetting("morphe_navigation_buttons_discovered", "", false, false);
     public static final BooleanSetting HIDE_NAVIGATION_BUTTON_LABELS = new BooleanSetting("morphe_hide_navigation_button_labels", FALSE, true, parentNot(HIDE_NAVIGATION_BAR));
@@ -1006,6 +1010,7 @@ public class Settings extends SharedYouTubeSettings {
     private static final BooleanSetting SHORTS_FLYOUT_SETTINGS_MIGRATED = new BooleanSetting("morphe_shorts_flyout_settings_migrated", FALSE, false, false);
     private static final BooleanSetting DOWNLOAD_BUTTON_OVERRIDE_MIGRATED = new BooleanSetting("morphe_download_button_override_migrated", FALSE, false, false);
     private static final BooleanSetting TOOLBAR_CAST_BUTTON_MIGRATED = new BooleanSetting("morphe_toolbar_cast_button_migrated", FALSE, false, false);
+    private static final BooleanSetting COMMENTS_VISIT_THE_COMMUNITY_MIGRATED = new BooleanSetting("morphe_comments_visit_the_community_migrated", FALSE, false, false);
     private static final EnumSetting<ThumbnailOption> DEPRECATED_ALT_THUMBNAIL_HOME = new EnumSetting<>("morphe_alt_thumbnail_home", ThumbnailOption.ORIGINAL);
     private static final EnumSetting<ThumbnailOption> DEPRECATED_ALT_THUMBNAIL_SUBSCRIPTIONS = new EnumSetting<>("morphe_alt_thumbnail_subscription", ThumbnailOption.ORIGINAL);
     private static final EnumSetting<ThumbnailOption> DEPRECATED_ALT_THUMBNAIL_LIBRARY = new EnumSetting<>("morphe_alt_thumbnail_library", ThumbnailOption.ORIGINAL);
@@ -1047,6 +1052,7 @@ public class Settings extends SharedYouTubeSettings {
     private static final BooleanSetting DEPRECATED_REMEMBER_LIVESTREAM_POSITION = new BooleanSetting("morphe_remember_livestream_position", FALSE, "morphe_remember_livestream_position_user_dialog_message");
     private static final StringSetting DEPRECATED_REMEMBER_LIVESTREAM_POSITION_TIMES = new StringSetting("morphe_remember_livestream_position_times", "", false, false);
     private static final BooleanSetting DEPRECATED_SANITIZE_COMMENTS_CATEGORY_BAR = new BooleanSetting("morphe_sanitize_comments_category_bar", FALSE);
+    private static final BooleanSetting DEPRECATED_SEARCH_COMMENTS = new BooleanSetting("morphe_search_comments", TRUE);
     private static final BooleanSetting DEPRECATED_SEEKBAR_TAPPING = new BooleanSetting("morphe_seekbar_tapping", FALSE);
     private static final BooleanSetting DEPRECATED_SWIPE_BRIGHTNESS = new BooleanSetting("morphe_swipe_brightness", FALSE);
     private static final BooleanSetting DEPRECATED_SWIPE_VOLUME = new BooleanSetting("morphe_swipe_volume", FALSE);
@@ -1113,6 +1119,19 @@ public class Settings extends SharedYouTubeSettings {
 
     private static final BooleanSetting NEXFUSION_DEFAULTS_MIGRATED = new BooleanSetting("nexfusion_defaults_migrated_v4", FALSE, false, false);
 
+    // Ghost mode
+    public static final BooleanSetting GHOST_PLAY_ENABLED = new BooleanSetting("morphe_ghost_play_enabled", TRUE);
+    public static final BooleanSetting GHOST_PLAY_MODE_ACTIVE = new BooleanSetting("morphe_ghost_play_mode_active", FALSE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_PERSIST_MODE = new BooleanSetting("morphe_ghost_play_persist_mode", FALSE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_TOOLBAR_BUTTON = new BooleanSetting("morphe_ghost_play_toolbar_button", TRUE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_FLYOUT_BUTTON = new BooleanSetting("morphe_ghost_play_flyout_button", TRUE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_PLAYER_BUTTON = new BooleanSetting("morphe_ghost_play_player_button", TRUE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_ANONYMIZE_REQUESTS = new BooleanSetting("morphe_ghost_play_anonymize_requests", TRUE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_AUTO_SHORTS = new BooleanSetting("morphe_ghost_play_auto_shorts", FALSE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_AUTO_SEARCH = new BooleanSetting("morphe_ghost_play_auto_search", FALSE, parent(GHOST_PLAY_ENABLED));
+    public static final BooleanSetting GHOST_PLAY_LOCAL_HISTORY = new BooleanSetting("morphe_ghost_play_local_history", TRUE, parent(GHOST_PLAY_ENABLED));
+    public static final IntegerSetting GHOST_PLAY_HISTORY_LIMIT = new IntegerSetting("morphe_ghost_play_history_limit", 500, parent(GHOST_PLAY_LOCAL_HISTORY));
+
     static {
         if (!NEXFUSION_DEFAULTS_MIGRATED.get()) {
             SWAP_CREATE_WITH_NOTIFICATIONS_BUTTON.save(false);
@@ -1171,6 +1190,7 @@ public class Settings extends SharedYouTubeSettings {
         migrateOldSettingToNew(DEPRECATED_REMEMBER_LIVESTREAM_POSITION, REMEMBER_LIVE_STREAM_POSITION);
         migrateOldSettingToNew(DEPRECATED_REMEMBER_LIVESTREAM_POSITION_TIMES, REMEMBER_LIVE_STREAM_POSITION_TIMES);
         migrateOldSettingToNew(DEPRECATED_SANITIZE_COMMENTS_CATEGORY_BAR, HIDE_COMMENTS_FILTER_BAR_OPTIONS);
+        migrateOldSettingToNew(DEPRECATED_SEARCH_COMMENTS, COMMENT_SEARCH);
         migrateOldSettingToNew(DEPRECATED_SEEKBAR_TAPPING, TAP_TO_SEEK);
 
         // Alternative thumbnails was renamed to DeArrow.
@@ -1194,6 +1214,7 @@ public class Settings extends SharedYouTubeSettings {
         migrateShortsFlyoutSettings();
         migrateDownloadButtonOverride();
         migrateToolbarCastButton();
+        migrateCommentsVisitTheCommunity();
 
         // SponsorBlock key namespace unification (sb_* -> morphe_sb_*).
         migrateOldSettingToNew(DEPRECATED_SB_ENABLED, SB_ENABLED);
@@ -1439,6 +1460,21 @@ public class Settings extends SharedYouTubeSettings {
             HIDE_TOOLBAR_CAST_BUTTON.save(true);
         }
         TOOLBAR_CAST_BUTTON_MIGRATED.save(true);
+    }
+
+    /**
+     * The 'Visit the Community' section of the comments was hidden with the community posts before it got
+     * its own setting, so the section stays hidden if the posts are. The community posts setting stays in use,
+     * so a marker is the only way to tell this already ran.
+     */
+    private static void migrateCommentsVisitTheCommunity() {
+        if (COMMENTS_VISIT_THE_COMMUNITY_MIGRATED.get()) {
+            return;
+        }
+        if (HIDE_COMMUNITY_POSTS.get()) {
+            HIDE_COMMENTS_VISIT_THE_COMMUNITY_SECTION.save(true);
+        }
+        COMMENTS_VISIT_THE_COMMUNITY_MIGRATED.save(true);
     }
 
     /**
