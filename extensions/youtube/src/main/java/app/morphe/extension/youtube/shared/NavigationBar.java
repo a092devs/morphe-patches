@@ -407,7 +407,7 @@ public final class NavigationBar {
 
         for (Map.Entry<View, NavigationButton> entry : viewToButtonMap.entrySet()) {
             View view = entry.getKey();
-            if (!view.isShown()) {
+            if (view == null || !view.isShown()) {
                 continue;
             }
             view.getLocationOnScreen(location);
