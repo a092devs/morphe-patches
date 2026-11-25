@@ -99,6 +99,11 @@ public class SwipeControlsHostActivity extends Activity {
     private GestureController gesture;
 
     @Nullable
+    private Activity hostActivity;
+
+    private boolean dispatchingDownstream;
+
+    @Nullable
     private ReplaySwipeController replayGesture;
 
     /**
@@ -198,6 +203,106 @@ public class SwipeControlsHostActivity extends Activity {
         return super.dispatchKeyEvent(ev);
     }
 
+    @Override
+    public android.view.Window getWindow() {
+        return hostActivity != null ? hostActivity.getWindow() : super.getWindow();
+    }
+
+    @Override
+    public android.content.res.Resources getResources() {
+        return hostActivity != null ? hostActivity.getResources() : super.getResources();
+    }
+
+    @Override
+    public Object getSystemService(String name) {
+        return hostActivity != null ? hostActivity.getSystemService(name) : super.getSystemService(name);
+    }
+
+    @Override
+    public android.content.Context getApplicationContext() {
+        return hostActivity != null ? hostActivity.getApplicationContext() : super.getApplicationContext();
+    }
+
+    @Override
+    public String getPackageName() {
+        return hostActivity != null ? hostActivity.getPackageName() : super.getPackageName();
+    }
+
+    @Override
+    public android.view.WindowManager getWindowManager() {
+        return hostActivity != null ? hostActivity.getWindowManager() : super.getWindowManager();
+    }
+
+    @Override
+    public boolean isInMultiWindowMode() {
+        return hostActivity != null ? hostActivity.isInMultiWindowMode() : super.isInMultiWindowMode();
+    }
+
+    @Override
+    public boolean isInPictureInPictureMode() {
+        return hostActivity != null ? hostActivity.isInPictureInPictureMode() : super.isInPictureInPictureMode();
+    }
+
+    @Override
+    public void onUserInteraction() {
+        if (hostActivity != null) {
+            hostActivity.onUserInteraction();
+        } else {
+            super.onUserInteraction();
+        }
+    }
+
+    public static SwipeControlsHostActivity attachRuntimeHost(Activity activity) {
+        SwipeControlsHostActivity host = new SwipeControlsHostActivity();
+        host.attachBaseContext(activity);
+        host.hostActivity = activity;
+        host.initialize();
+        host.reAttachOverlays();
+        return host;
+    }
+
+    public void onHostStart() {
+        reAttachOverlays();
+    }
+
+    public void onHostStop() {
+        if (replayGesture != null) {
+            replayGesture.cancel();
+        }
+    }
+
+    public void onHostDestroy() {
+        if (playerTypeObserver != null) {
+            PlayerType.getOnChange().removeObserver(playerTypeObserver);
+        }
+    }
+
+    public boolean onHostDispatchTouchEvent(MotionEvent ev) {
+        if (dispatchingDownstream) {
+            return false;
+        }
+        ensureInitialized();
+        if (submitReplayTouchEvent(ev)) {
+            return true;
+        }
+        if (gesture.submitTouchEvent(ev)) {
+            if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                onUserInteraction();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean onHostDispatchKeyEvent(KeyEvent ev) {
+        ensureInitialized();
+        if (keys.onKeyEvent(ev)) {
+            onUserInteraction();
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Dispatches a touch event to downstream views.
      *
@@ -206,13 +311,30 @@ public class SwipeControlsHostActivity extends Activity {
      */
     @SuppressWarnings("UnusedReturnValue")
     public boolean dispatchDownstreamTouchEvent(MotionEvent event) {
+        if (hostActivity != null) {
+            dispatchingDownstream = true;
+            try {
+                return hostActivity.dispatchTouchEvent(event);
+            } finally {
+                dispatchingDownstream = false;
+            }
+        }
         return super.dispatchTouchEvent(event);
     }
 
     /** Cancels the existing detectors once a replay swipe owns the touch sequence. */
     public void cancelTouchGestures(MotionEvent canceled) {
         gesture.submitTouchEvent(canceled);
-        super.dispatchTouchEvent(canceled);
+        if (hostActivity != null) {
+            dispatchingDownstream = true;
+            try {
+                hostActivity.dispatchTouchEvent(canceled);
+            } finally {
+                dispatchingDownstream = false;
+            }
+        } else {
+            super.dispatchTouchEvent(canceled);
+        }
     }
 
     @Nullable
