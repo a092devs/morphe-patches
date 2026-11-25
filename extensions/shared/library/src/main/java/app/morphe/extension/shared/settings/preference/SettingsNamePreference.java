@@ -109,14 +109,16 @@ public class SettingsNamePreference extends CustomDialogListPreference {
         };
         applySelection.run();
 
-        listView.setOnItemClickListener((parent, view, position, id) -> {
+        java.util.function.Consumer<Integer> onRowSelected = position -> {
             selectedValue[0] = entryValues[position].toString();
             applySelection.run();
 
             if (editText.getVisibility() == View.VISIBLE) {
                 editText.requestFocus();
             }
-        });
+        };
+        adapter.setOnItemClickListener(onRowSelected);
+        listView.setOnItemClickListener((parent, view, position, id) -> onRowSelected.accept(position));
 
         LinearLayout contentLayout = new LinearLayout(context);
         contentLayout.setOrientation(LinearLayout.VERTICAL);
