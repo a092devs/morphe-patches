@@ -7,10 +7,14 @@
 
 package app.morphe.extension.reddit.patches;
 
+import static app.morphe.extension.reddit.utils.ComposeUtils.getDensity;
+import static app.morphe.extension.reddit.utils.ComposeUtils.pack;
+import static app.morphe.extension.reddit.utils.ComposeUtils.unpackFirst;
+import static app.morphe.extension.reddit.utils.ComposeUtils.unpackSecond;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Build;
 
@@ -20,6 +24,8 @@ import androidx.annotation.ColorInt;
 import java.util.List;
 
 import app.morphe.extension.reddit.settings.Settings;
+import app.morphe.extension.reddit.utils.ComposeUtils.ContentDrawScope;
+import app.morphe.extension.reddit.utils.ComposeUtils.Modifier;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.settings.Setting;
@@ -54,40 +60,6 @@ public final class GlassNavigationBarPatch {
     }
 
     /**
-     * Compose Canvas.
-     */
-    public interface ComposeCanvas {
-        // Methods are added during patching.
-        Canvas patch_getNativeCanvas();
-
-        void patch_setNativeCanvas(Canvas canvas);
-    }
-
-    /**
-     * Compose ContentDrawScope. Sizes, offsets and corner radii are two packed floats.
-     */
-    public interface ContentDrawScope {
-        // Methods are added during patching.
-        ComposeCanvas patch_getCanvas();
-
-        long patch_getSize();
-
-        void patch_drawContent();
-
-        void patch_drawRoundRect(long color, long topLeft, long size, long cornerRadius);
-    }
-
-    /**
-     * Compose Modifier.
-     */
-    public interface Modifier {
-        // Methods are added during patching.
-        Object patch_drawWithContent(Function1<?, ?> draw);
-
-        Object patch_padding(float start, float top, float end, float bottom);
-    }
-
-    /**
      * Reddit theme colors.
      */
     public interface NeutralColors {
@@ -105,11 +77,7 @@ public final class GlassNavigationBarPatch {
     }
 
     /**
-     * Draws a capsule behind the content. Not a lambda, because the extension shrinker
-     * removes the invoke method of lambda classes as it is only called by app code.
-     * <p>
-     * The instances are not in the outer class, because Function1 is obfuscated in
-     * Reddit 2026.10.0 and the outer class is always loaded by the settings.
+     * Draws a capsule behind the content.
      */
     private static final class CapsuleDraw implements Function1<ContentDrawScope, Object> {
         private static final CapsuleDraw BAR = new CapsuleDraw(false);
@@ -179,6 +147,13 @@ public final class GlassNavigationBarPatch {
     static final int BLUR_PERCENT = SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_BLUR);
     private static final int HEIGHT_PERCENT = SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_HEIGHT);
     private static final int WIDTH_PERCENT = SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_WIDTH);
+    /**
+     * How far the bottom bar is lifted.
+     */
+    private static final int POSITION_DP = GLASS_ENABLED
+            ? SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_POSITION)
+            : 0;
+    private static final boolean HIDE_LABELS = GLASS_ENABLED && !Settings.GLASS_NAVIGATION_BAR_SHOW_LABELS.get();
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private static final boolean FROSTED_ENABLED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
@@ -288,6 +263,72 @@ public final class GlassNavigationBarPatch {
     /**
      * Injection point.
      *
+     * @param slide     How far the bar is slid down while it hides, in pixels.
+     * @param barHeight Height of the bar, in pixels.
+     */
+    public static float getBarSlide(float slide, float barHeight) {
+        if (POSITION_DP == 0 && !FROSTED_ENABLED) {
+            return slide;
+        }
+
+        try {
+            if (barHeight > 0) {
+                // The lift decreases while the bar hides, so it still slides fully away.
+                slide -= getLift() * (1 - slide / barHeight);
+            }
+            updateBlurOffset(slide);
+        } catch (Exception ex) {
+            Logger.printException(() -> "getBarSlide failure", ex);
+        }
+
+        return slide;
+    }
+
+    /**
+     * Injection point.
+     *
+     * @param modifier Modifier of the bar, if it does not hide on the current screen.
+     */
+    public static Object getStaticBarModifier(Modifier modifier) {
+        if (POSITION_DP == 0 && !FROSTED_ENABLED) {
+            return modifier;
+        }
+
+        try {
+            updateBlurOffset(-getLift());
+
+            if (POSITION_DP > 0) {
+                return modifier.patch_offset(0, -POSITION_DP);
+            }
+        } catch (Exception ex) {
+            Logger.printException(() -> "getStaticBarModifier failure", ex);
+        }
+
+        return modifier;
+    }
+
+    /**
+     * Injection point.
+     *
+     * @param barHeight Height of the bar, in pixels.
+     * @return How far the create button is above the bottom of the screen.
+     */
+    public static float getCreateButtonOffset(float barHeight) {
+        return POSITION_DP == 0 ? barHeight : barHeight + getLift();
+    }
+
+    /**
+     * Injection point.
+     *
+     * @return If the buttons show their labels.
+     */
+    public static boolean showLabel(boolean original) {
+        return original && !HIDE_LABELS;
+    }
+
+    /**
+     * Injection point.
+     *
      * @param modifier Modifier of the column with the buttons of the side rail.
      */
     public static Object getRailModifier(Modifier modifier) {
@@ -326,6 +367,19 @@ public final class GlassNavigationBarPatch {
         return width * (100 - WIDTH_PERCENT) / 200;
     }
 
+    /**
+     * @return How far the bottom bar is lifted up, in pixels.
+     */
+    private static float getLift() {
+        return POSITION_DP * getDensity();
+    }
+
+    private static void updateBlurOffset(float barOffset) {
+        if (FROSTED_ENABLED) {
+            GlassNavigationBarBlur.setBarOffset(Math.round(barOffset));
+        }
+    }
+
     private static void drawBarCapsule(ContentDrawScope scope) {
         final long size = scope.patch_getSize();
         final float width = unpackFirst(size);
@@ -339,7 +393,7 @@ public final class GlassNavigationBarPatch {
 
         if (unpackSecond(size) - rowHeight > GESTURE_NAVIGATION_MAX_HEIGHT_DP * density) {
             // Do not draw the capsule behind the system navigation bar.
-            height = Math.min(height, rowHeight - top);
+            height = Math.min(height, rowHeight - top + getLift());
         }
 
         drawCapsule(scope, left, top, width - 2 * left, height, density, true);
@@ -407,22 +461,5 @@ public final class GlassNavigationBarPatch {
         final long argb = (alpha << 24) | (dark ? GLASS_RGB_DARK : GLASS_RGB_LIGHT);
 
         return argb << 32;
-    }
-
-    static float getDensity() {
-        return Utils.getContext().getResources().getDisplayMetrics().density;
-    }
-
-    private static long pack(float first, float second) {
-        return ((long) Float.floatToRawIntBits(first) << 32)
-                | (Float.floatToRawIntBits(second) & 0xFFFFFFFFL);
-    }
-
-    static float unpackFirst(long packed) {
-        return Float.intBitsToFloat((int) (packed >>> 32));
-    }
-
-    static float unpackSecond(long packed) {
-        return Float.intBitsToFloat((int) packed);
     }
 }

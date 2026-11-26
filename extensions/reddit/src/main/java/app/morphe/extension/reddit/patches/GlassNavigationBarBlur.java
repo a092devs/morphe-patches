@@ -7,6 +7,10 @@
 
 package app.morphe.extension.reddit.patches;
 
+import static app.morphe.extension.reddit.utils.ComposeUtils.getDensity;
+import static app.morphe.extension.reddit.utils.ComposeUtils.unpackFirst;
+import static app.morphe.extension.reddit.utils.ComposeUtils.unpackSecond;
+
 import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
@@ -22,8 +26,8 @@ import android.os.Build;
 import androidx.annotation.ColorInt;
 import androidx.annotation.RequiresApi;
 
-import app.morphe.extension.reddit.patches.GlassNavigationBarPatch.ComposeCanvas;
-import app.morphe.extension.reddit.patches.GlassNavigationBarPatch.ContentDrawScope;
+import app.morphe.extension.reddit.utils.ComposeUtils.ComposeCanvas;
+import app.morphe.extension.reddit.utils.ComposeUtils.ContentDrawScope;
 import kotlin.jvm.functions.Function1;
 
 /**
@@ -51,8 +55,8 @@ final class GlassNavigationBarBlur {
             ComposeCanvas composeCanvas = scope.patch_getCanvas();
             Canvas canvas = composeCanvas.patch_getNativeCanvas();
             final long size = scope.patch_getSize();
-            final int width = (int) Math.ceil(GlassNavigationBarPatch.unpackFirst(size));
-            final int height = (int) Math.ceil(GlassNavigationBarPatch.unpackSecond(size));
+            final int width = (int) Math.ceil(unpackFirst(size));
+            final int height = (int) Math.ceil(unpackSecond(size));
 
             if (!canvas.isHardwareAccelerated() || width <= 0 || height <= 0) {
                 scope.patch_drawContent();
@@ -96,9 +100,14 @@ final class GlassNavigationBarBlur {
     private static final int BLUR_MARGIN;
 
     /**
-     * Blurred area relative to the bottom left corner of the page.
+     * Blurred area relative to the bottom left corner of the page, if the bar is not moved.
      */
     private static int blurLeft, blurTopFromBottom, blurWidth, blurHeight;
+
+    /**
+     * How far down the bar is moved from the bottom of the page, in pixels.
+     */
+    private static int barOffset;
 
     /**
      * Drawn below the page, because not all pages have their own background.
@@ -110,7 +119,7 @@ final class GlassNavigationBarBlur {
         // Same as without the render node.
         PAGE_NODE.setClipToBounds(false);
 
-        final float density = GlassNavigationBarPatch.getDensity();
+        final float density = getDensity();
         final float radius = GlassNavigationBarPatch.BLUR_PERCENT * MAX_BLUR_RADIUS_DP * density / 100;
         BLUR_MARGIN = (int) Math.ceil(radius);
 
@@ -129,6 +138,16 @@ final class GlassNavigationBarBlur {
     }
 
     /**
+     * The bar is not drawn again if only its position changes.
+     */
+    static void setBarOffset(int offset) {
+        if (barOffset != offset) {
+            barOffset = offset;
+            recordBackdrop();
+        }
+    }
+
+    /**
      * Draws the blurred page inside the capsule.
      *
      * @param scope Scope of the navigation bar, which is at the bottom of the page
@@ -144,7 +163,7 @@ final class GlassNavigationBarBlur {
 
         final int capsuleLeft = (int) Math.floor(left);
         final int capsuleTop = (int) Math.floor(top);
-        final float barHeight = GlassNavigationBarPatch.unpackSecond(scope.patch_getSize());
+        final float barHeight = unpackSecond(scope.patch_getSize());
 
         blurLeft = capsuleLeft - BLUR_MARGIN;
         blurTopFromBottom = Math.round(barHeight) - capsuleTop + BLUR_MARGIN;
@@ -176,7 +195,7 @@ final class GlassNavigationBarBlur {
         RecordingCanvas recording = BLUR_NODE.beginRecording(blurWidth, blurHeight);
         try {
             recording.drawColor(backgroundColor);
-            recording.translate(-blurLeft, blurTopFromBottom - PAGE_NODE.getHeight());
+            recording.translate(-blurLeft, blurTopFromBottom - barOffset - PAGE_NODE.getHeight());
             recording.drawRenderNode(PAGE_NODE);
         } finally {
             BLUR_NODE.endRecording();

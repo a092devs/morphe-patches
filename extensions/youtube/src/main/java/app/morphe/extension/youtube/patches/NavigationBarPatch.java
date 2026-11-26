@@ -1323,8 +1323,14 @@ public final class NavigationBarPatch {
     private static volatile WeakReference<View> settingsTabRef = new WeakReference<>(null);
 
     // 'You' button account switcher
-    private static final boolean YOU_BUTTON_ACCOUNT_SWITCHER = VersionCheckPatch.IS_21_30_OR_GREATER
-            && Settings.YOU_BUTTON_ACCOUNT_SWITCHER.get();
+    private static final boolean YOU_BUTTON_ACCOUNT_SWITCHER = Settings.YOU_BUTTON_ACCOUNT_SWITCHER.get();
+
+    /**
+     * The server rejects the request of versions before 21.35 for the content of the lite account
+     * switcher, and the switcher closes right after it opens. These versions open the account dialog
+     * of the 'Accounts' button of the 'You' page instead.
+     */
+    private static final boolean USE_LITE_ACCOUNT_SWITCHER = VersionCheckPatch.IS_21_35_OR_GREATER;
 
     /**
      * The server rejects the request of 21.30 for the content of the lite account switcher,

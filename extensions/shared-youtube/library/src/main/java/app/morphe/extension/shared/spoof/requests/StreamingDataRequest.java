@@ -14,13 +14,14 @@ import static app.morphe.extension.shared.StringRef.str;
 
 import android.net.Uri;
 import android.util.Base64;
-import android.util.Base64InputStream;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -322,6 +323,24 @@ public class StreamingDataRequest {
     public static boolean playerClientUsesSABR(@Nullable String videoId) {
         StreamData stream = videoId == null ? null : playerStreams.get(videoId);
         return stream != null && stream.client.requireSABR;
+    }
+
+    /**
+     * The SABR server of the clients of the YouTube HTML5 player (TV, Web and Mobile Web) sends only the video
+     * formats whose width and height fit the largest width and height of a video decoder of the device,
+     * without turning the formats. So a vertical format, such as the 1080x1920 format of a Short,
+     * does not fit a video decoder of up to 1920x1088, while it plays with the streams of the other clients.
+     *
+     * @param videoId The video, or null.
+     * @return If the streams given to the player for the video are SABR streams of such a client.
+     */
+    public static boolean playerClientFitsFormatsToDecoders(@Nullable String videoId) {
+        StreamData stream = videoId == null ? null : playerStreams.get(videoId);
+        if (stream == null || !stream.client.requireSABR) {
+            return false;
+        }
+        ClientType client = stream.client;
+        return client.isWebClient() || client == ClientType.TV_SABR || client == ClientType.TV_SABR_WII_U;
     }
 
     private final String videoId;
@@ -789,9 +808,19 @@ public class StreamingDataRequest {
             return null;
         }
 
-        try (InputStream inputStream = BASE64_ENCODING.equals(connection.getHeaderField(SAFETY_ENCODING_HEADER))
-                ? new Base64InputStream(connection.getInputStream(), Base64.DEFAULT)
-                : connection.getInputStream()) {
+        try (InputStream connectionStream = connection.getInputStream()) {
+            InputStream inputStream = connectionStream;
+            if (BASE64_ENCODING.equals(connection.getHeaderField(SAFETY_ENCODING_HEADER))) {
+                // The response is decoded whole. Base64InputStream ends the stream when a read of the connection
+                // gives less than 4 characters, as they decode to no byte yet, so the response could be cut.
+                ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+                byte[] buffer = new byte[16384];
+                int read;
+                while ((read = connectionStream.read(buffer)) != -1) {
+                    encoded.write(buffer, 0, read);
+                }
+                inputStream = new ByteArrayInputStream(Base64.decode(encoded.toByteArray(), Base64.DEFAULT));
+            }
             PlayerResponse playerResponse;
 
             if (clientType.usePlayerEndpoint) {
@@ -922,7 +951,8 @@ public class StreamingDataRequest {
 
             return new StreamData(streamingDataBuffer, playerConfigBuffer, hasAndroidMedia, clientType,
                     signedInOnThread.get());
-        } catch (IOException ex) {
+        } catch (IOException | IllegalArgumentException ex) {
+            // IllegalArgumentException: a response that is not valid base64.
             Logger.printException(() -> "Failed to write player response for video stream", ex);
             return null;
         }

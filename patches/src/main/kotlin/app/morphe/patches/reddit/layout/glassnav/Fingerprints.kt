@@ -70,79 +70,12 @@ internal object SideNavRailContentFingerprint : Fingerprint(
             returnType = "L"
         ),
         literal(64f),
-        literal(48f, location = MatchAfterWithin(10))
-    )
-)
-
-/**
- * DrawScope.drawRoundRect with the default arguments mask.
- */
-internal object DrawRoundRectFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.SYNTHETIC),
-    returnType = "V",
-    parameters = listOf("L", "J", "J", "J", "J", "L", "F", "I"),
-    filters = listOf(
-        // DrawScope.size
+        literal(48f, location = MatchAfterWithin(10)),
+        // Label of a button and if it is shown. Also used by the bottom navigation bar.
         methodCall(
-            opcode = Opcode.INVOKE_INTERFACE,
-            parameters = listOf(),
-            returnType = "J"
-        ),
-        methodCall(
-            opcode = Opcode.INVOKE_INTERFACE_RANGE,
-            parameters = listOf("J", "J", "J", "J", "L", "F"),
-            returnType = "V"
-        )
-    )
-)
-
-internal object DrawContentFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = listOf(),
-    filters = listOf(
-        string(
-            "Attempting to drawContent for a `null` node",
-            comparison = StringComparisonType.STARTS_WITH
-        )
-    )
-)
-
-/**
- * Draws a Lottie animation using the native Canvas.
- */
-internal object LottieAnimationDrawFingerprint : Fingerprint(
-    definingClass = $$"Lcom/airbnb/lottie/compose/LottieAnimationKt$LottieAnimation$2;",
-    name = "invoke",
-    returnType = "V",
-    filters = listOf(
-        // DrawScope.drawContext
-        methodCall(parameters = listOf(), returnType = "L"),
-        opcode(Opcode.MOVE_RESULT_OBJECT, location = MatchAfterImmediately()),
-        // DrawContext.canvas
-        methodCall(parameters = listOf(), returnType = "L", location = MatchAfterWithin(5)),
-        opcode(Opcode.MOVE_RESULT_OBJECT, location = MatchAfterImmediately()),
-        // AndroidCanvas.internalCanvas
-        fieldAccess(opcode = Opcode.IGET_OBJECT, type = "Landroid/graphics/Canvas;")
-    )
-)
-
-/**
- * Modifier.padding
- */
-internal object PaddingFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
-    returnType = "L",
-    parameters = listOf("L", "F", "F", "F", "F"),
-    filters = listOf(
-        methodCall(
+            opcode = Opcode.INVOKE_DIRECT,
             name = "<init>",
-            parameters = listOf("F", "F", "F", "F", "Lkotlin/jvm/functions/Function1;")
-        ),
-        methodCall(
-            opcode = Opcode.INVOKE_INTERFACE,
-            parameters = listOf("L"),
-            returnType = "L",
-            location = MatchAfterWithin(5)
+            parameters = listOf("Ljava/lang/String;", "Z")
         )
     )
 )
@@ -233,6 +166,26 @@ internal object BottomNavStackHostFingerprint : Fingerprint(
     )
 )
 
+private object ModifierCompanionToStringFingerprint : Fingerprint(
+    name = "toString",
+    returnType = "Ljava/lang/String;",
+    parameters = listOf(),
+    filters = listOf(
+        string("Modifier")
+    )
+)
+
+/**
+ * Creates the empty Modifier.
+ */
+internal object ModifierCompanionFingerprint : Fingerprint(
+    classFingerprint = ModifierCompanionToStringFingerprint,
+    name = "<clinit>",
+    filters = listOf(
+        fieldAccess(opcode = Opcode.SPUT_OBJECT, definingClass = "this")
+    )
+)
+
 private object NavScreenContentStateToStringFingerprint : Fingerprint(
     name = "toString",
     returnType = "Ljava/lang/String;",
@@ -251,4 +204,94 @@ internal object NavScreenContentStateConstructorFingerprint : Fingerprint(
     classFingerprint = NavScreenContentStateToStringFingerprint,
     name = "<init>",
     parameters = listOf("Z", "Z", "Z", "F", "Z")
+)
+
+/**
+ * Places the bottom navigation bar of screens where it hides while scrolling.
+ */
+internal object BottomNavBarPlacementFingerprint : Fingerprint(
+    name = "invoke",
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("Ljava/lang/Object;"),
+    filters = listOf(
+        // (1 - shownFraction) * height
+        methodCall(definingClass = "Ljava/lang/Number;", name = "floatValue"),
+        opcode(Opcode.SUB_FLOAT_2ADDR, location = MatchAfterWithin(5)),
+        // Must be immediately, because a similar lambda negates this to slide the top bar up.
+        fieldAccess(opcode = Opcode.IGET, type = "I", location = MatchAfterImmediately()),
+        opcode(Opcode.INT_TO_FLOAT, location = MatchAfterWithin(5)),
+        opcode(Opcode.MUL_FLOAT_2ADDR, location = MatchAfterWithin(5)),
+        // Float.roundToInt
+        methodCall(
+            opcode = Opcode.INVOKE_STATIC,
+            parameters = listOf("F"),
+            returnType = "I",
+            location = MatchAfterWithin(5)
+        ),
+        // PlacementScope.placeRelative
+        methodCall(
+            opcode = Opcode.INVOKE_STATIC,
+            parameters = listOf("L", "L", "I", "I"),
+            returnType = "V",
+            location = MatchAfterWithin(5)
+        )
+    )
+)
+
+/**
+ * Bottom navigation bar of screens where it does not hide while scrolling.
+ */
+internal object StaticBottomNavBarFingerprint : Fingerprint(
+    definingClass = BOTTOM_NAV_SCREEN_CLASS,
+    returnType = "V",
+    parameters = listOf("L", "L", "I"),
+    filters = listOf(
+        // Modifier of the bar.
+        methodCall(
+            opcode = Opcode.INVOKE_STATIC,
+            definingClass = "Landroidx/compose/ui/b;",
+            parameters = listOf("L", "L"),
+            returnType = "L"
+        ),
+        methodCall(
+            definingClass = "Ljava/lang/Integer;",
+            name = "valueOf",
+            location = MatchAfterWithin(35)
+        ),
+        // Content of the bar.
+        fieldAccess(
+            opcode = Opcode.IGET_OBJECT,
+            definingClass = BOTTOM_NAV_SCREEN_CLASS,
+            type = "Landroidx/compose/runtime/internal/a;",
+            location = MatchAfterWithin(25)
+        )
+    )
+)
+
+/**
+ * Offset of the create post button that floats above the bottom navigation bar, 2026.45.0+
+ */
+internal object CreateButtonOffsetFingerprint : Fingerprint(
+    name = "invoke",
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("Ljava/lang/Object;"),
+    filters = listOf(
+        fieldAccess(
+            opcode = Opcode.IGET_OBJECT,
+            definingClass = "this",
+            type = BOTTOM_NAV_SCREEN_CLASS
+        ),
+        methodCall(definingClass = "Ljava/lang/Number;", name = "floatValue"),
+        // Height of the bar.
+        opcode(Opcode.INT_TO_FLOAT),
+        // Not lower than the system navigation bar.
+        methodCall(
+            definingClass = "Ljava/lang/Math;",
+            name = "max",
+            parameters = listOf("I", "I"),
+            returnType = "I"
+        ),
+        opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately()),
+        opcode(Opcode.NEG_INT, location = MatchAfterWithin(5))
+    )
 )
