@@ -57,6 +57,10 @@ public class NavigationBarPreferenceCategory extends ConditionalPreferenceCatego
                     context,
                     Settings.GLASS_NAVIGATION_BAR_STYLE
             ));
+            addPreference(new CustomDialogListPreference(
+                    context,
+                    Settings.GLASS_NAVIGATION_BAR_STRENGTH
+            ));
             addPreference(new SeekBarSettingPreference(
                     context,
                     Settings.GLASS_NAVIGATION_BAR_BLUR
@@ -85,6 +89,12 @@ public class NavigationBarPreferenceCategory extends ConditionalPreferenceCatego
                     context,
                     Settings.GLASS_NAVIGATION_BAR_SHOW_LABELS
             ));
+            if (GlassNavigationBarPatch.isSearchButtonSupported()) {
+                addPreference(new BooleanSettingPreference(
+                        context,
+                        Settings.GLASS_NAVIGATION_BAR_SEARCH_BUTTON
+                ));
+            }
         }
 
         if (HideNavigationButtonsPatch.isPatchIncluded()) {

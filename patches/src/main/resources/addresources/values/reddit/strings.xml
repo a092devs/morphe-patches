@@ -41,6 +41,10 @@ To use an older version, you must &lt;b>uninstall&lt;/b> Reddit and then install
     <string name="morphe_glass_navigation_bar_style_title">Glass style</string>
     <string name="morphe_glass_navigation_bar_style_entry_tinted">Tinted</string>
     <string name="morphe_glass_navigation_bar_style_entry_frosted">Frosted glass</string>
+    <string name="morphe_glass_navigation_bar_strength_title">Glass strength</string>
+    <string name="morphe_glass_navigation_bar_strength_entry_clear">Clear</string>
+    <string name="morphe_glass_navigation_bar_strength_entry_balanced">Balanced</string>
+    <string name="morphe_glass_navigation_bar_strength_entry_solid">Solid</string>
     <string name="morphe_glass_navigation_bar_blur_title">Glass blur</string>
     <string name="morphe_glass_navigation_bar_blur_summary">How much the page behind the frosted glass is blurred (Android 14 and later). At 0, and before Android 14, the glass is tinted</string>
     <string name="morphe_glass_navigation_bar_opacity_title">Glass opacity</string>
@@ -57,6 +61,10 @@ To use an older version, you must &lt;b>uninstall&lt;/b> Reddit and then install
     <string name="morphe_glass_navigation_bar_show_labels_title">Show labels</string>
     <string name="morphe_glass_navigation_bar_show_labels_summary_on">Buttons show their labels</string>
     <string name="morphe_glass_navigation_bar_show_labels_summary_off">Buttons show icons only</string>
+    <string name="morphe_glass_navigation_bar_search_button_title">Search button</string>
+    <string name="morphe_glass_navigation_bar_search_button_summary_on">Search is a round button next to the navigation bar on phones</string>
+    <string name="morphe_glass_navigation_bar_search_button_summary_off">Search is at the top of Home</string>
+    <string name="morphe_glass_navigation_bar_search_button_label">Search</string>
     <string name="morphe_hide_answers_button_title">Hide Answers button</string>
     <string name="morphe_hide_chat_button_title">Hide Chat button</string>
     <string name="morphe_hide_create_button_title">Hide Create button</string>
@@ -312,7 +320,7 @@ To use an older version, you must &lt;b>uninstall&lt;/b> Reddit and then install
     <string name="morphe_open_links_externally_summary">Opens links in your browser instead of the in-app browser</string>
     <string name="morphe_full_screen_reply_title">Full-screen reply</string>
     <string name="morphe_full_screen_reply_summary">Replies open in the older full-screen editor, which shows the comment you are replying to so you can select and quote its text. Image cropping is not available there</string>
-    <string name="morphe_automoderator_comments_title">AutoModerator comments</string>
+    <string name="morphe_automoderator_comments_title">AutoModerator, bot and pinned comments</string>
     <string name="morphe_automoderator_comments_entry_show">Show</string>
     <string name="morphe_automoderator_comments_entry_collapse">Collapse</string>
     <string name="morphe_automoderator_comments_entry_hide">Hide</string>
