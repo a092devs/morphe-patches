@@ -150,7 +150,26 @@ public class ToolbarPreferenceFragment extends AbstractPreferenceFragment {
                             // Allow package-specific post-toolbar setup.
                             onPostToolbarSetup(toolbar, preferenceScreenDialog);
 
-                            rootView.addView(toolbar, 0);
+                            if (rootView instanceof android.widget.LinearLayout) {
+                                rootView.addView(toolbar, 0);
+                            } else {
+                                // On One UI 7 / Android 15, PreferenceScreen dialog rootView may not be a LinearLayout.
+                                // Wrap existing children inside a vertical LinearLayout so toolbar + content stack cleanly.
+                                android.view.View contentView = preferenceScreenDialog.findViewById(android.R.id.content);
+                                if (contentView != null && contentView.getParent() == rootView) {
+                                    int idx = rootView.indexOfChild(contentView);
+                                    ViewGroup.LayoutParams contentLp = contentView.getLayoutParams();
+                                    rootView.removeView(contentView);
+                                    android.widget.LinearLayout wrapper = new android.widget.LinearLayout(childScreen.getContext());
+                                    wrapper.setOrientation(android.widget.LinearLayout.VERTICAL);
+                                    wrapper.addView(toolbar);
+                                    wrapper.addView(contentView, new android.widget.LinearLayout.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
+                                    rootView.addView(wrapper, idx, contentLp);
+                                } else {
+                                    rootView.addView(toolbar, 0);
+                                }
+                            }
                             return false;
                         }
                 );
