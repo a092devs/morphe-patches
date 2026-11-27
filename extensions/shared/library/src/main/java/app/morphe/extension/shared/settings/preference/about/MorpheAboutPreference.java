@@ -164,7 +164,7 @@ public class MorpheAboutPreference extends Preference {
         appendTile(html, "https://t.me/nexfusion", "Telegram Channel", AboutDialogStyle.linkIcon("https://t.me/nexfusion"), false);
 
         html.append("</div></div>")
-                .append(AboutDialogStyle.pageEnd(getString("morphe_settings_about_close"), null))
+                .append(AboutDialogStyle.pageEnd(getString("morphe_settings_close"), null))
                 .append(AboutDialogStyle.DOCUMENT_END);
 
         return html.toString();
