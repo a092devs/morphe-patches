@@ -19,7 +19,9 @@ import app.morphe.extension.reddit.settings.Settings;
 import app.morphe.extension.reddit.utils.ComposeUtils;
 import app.morphe.extension.reddit.utils.ComposeUtils.ContentDrawScope;
 import app.morphe.extension.reddit.utils.ComposeUtils.Modifier;
+import app.morphe.extension.reddit.utils.ComposeUtils.MutableState;
 import app.morphe.extension.shared.Logger;
+import app.morphe.extension.shared.Utils;
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.functions.Function2;
 
@@ -31,6 +33,16 @@ import kotlin.jvm.functions.Function2;
  */
 @SuppressWarnings("unused")
 public final class GlassNavigationBarTopTabs {
+
+    /**
+     * Compose LazyListState of the list feed. Interface added during patching.
+     */
+    public interface ListState {
+        /**
+         * @return If the list is scrolled away from the top.
+         */
+        boolean patch_isScrolled();
+    }
 
     /**
      * Draws the glass capsule behind the tabs.
@@ -108,6 +120,7 @@ public final class GlassNavigationBarTopTabs {
     private static final float TABS_WEIGHT = 1000;
     private static final float HEADER_HEIGHT_DP = 8;
     private static final float CAPSULE_MARGIN_DP = 4;
+    private static final float TOP_BAR_GLASS_GAP_DP = 8;
     private static final float SELECTED_PILL_INSET_X_DP = 2;
     private static final float SELECTED_PILL_INSET_Y_DP = 4;
     private static final float TAB_CORNER_RADIUS_DP = 100;
@@ -124,6 +137,15 @@ public final class GlassNavigationBarTopTabs {
 
     private static final boolean ENABLED = GlassNavigationBarPatch.isSearchButtonEnabled()
             && Settings.GLASS_NAVIGATION_BAR_TOP_TABS.get();
+
+    /**
+     * Read when the top bar is drawn, so Compose draws it again when the feed on screen changes.
+     */
+    @Nullable
+    private static final MutableState FEED_CHANGE = isTrackingFeeds()
+            ? (MutableState) ComposeUtils.newMutableState(0)
+            : null;
+    private static int feedChangeCount;
 
     @Nullable
     private static WeakReference<BelowContent> belowContentRef;
@@ -159,6 +181,45 @@ public final class GlassNavigationBarTopTabs {
      */
     static boolean isShown() {
         return isActive() && tabsInRow;
+    }
+
+    /**
+     * @return If {@link FeedHookPatch} must track the feeds for this patch.
+     *         The top bar is see-through only with the app bar drawn by "See-through status bar".
+     */
+    static boolean isTrackingFeeds() {
+        return ENABLED && SeeThroughStatusBarPatch.isSeeThroughEnabled();
+    }
+
+    /**
+     * @return If the list feed on screen is at the top, or if there is no list feed on screen.
+     */
+    static boolean isFeedOnScreenAtTop() {
+        if (FEED_CHANGE != null) {
+            FEED_CHANGE.patch_getValue();
+        }
+
+        return !(FeedHookPatch.findOnScreenFeedState() instanceof ListState state)
+                || !state.patch_isScrolled();
+    }
+
+    /**
+     * Called when a feed is added or the feed visibility changes.
+     */
+    static void onFeedsChanged() {
+        final MutableState change = FEED_CHANGE;
+        if (change == null || !isActive()) {
+            return;
+        }
+
+        // Feeds are added while they are composed, so the state is changed afterwards.
+        Utils.runOnMainThread(() -> {
+            try {
+                change.patch_setValue(++feedChangeCount);
+            } catch (Exception ex) {
+                Logger.printException(() -> "onFeedsChanged failure", ex);
+            }
+        });
     }
 
     /**
@@ -265,7 +326,10 @@ public final class GlassNavigationBarTopTabs {
             // its full height in the top bar row.
             if (tabsModifier == null) {
                 Modifier weight = (Modifier) ComposeUtils.newWeightModifier(TABS_WEIGHT, true);
-                tabsModifier = weight.patch_drawWithContent(CapsuleDraw.INSTANCE);
+                final float gap = GlassNavigationBarPatch.TOP_BAR_BUTTON_GLASS_EXTRA_DP / 2
+                        + TOP_BAR_GLASS_GAP_DP - CAPSULE_MARGIN_DP;
+                tabsModifier = ((Modifier) weight.patch_padding(gap, 0, gap, 0))
+                        .patch_drawWithContent(CapsuleDraw.INSTANCE);
             }
             replacedModifierRef = new WeakReference<>(modifier);
 

@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 Morphe.
- * https://github.com/MorpheApp/morphe-patches
+ * https://github.com/MorpheApp/morphe-patches/pull/5280
  *
  * See the included NOTICE file for GPLv3 Section 7 terms that apply to this code.
  */
@@ -95,15 +95,16 @@ public final class SeeThroughStatusBarPatch {
         @Override
         public Object invoke(ContentDrawScope scope) {
             try {
-                final boolean topTabsShown = GlassNavigationBarTopTabs.isShown();
                 // The menu button and the avatar have their own glass. With the tabs in the
-                // top bar row, the top bar is drawn with the color of the page instead.
-                if (topTabsShown || !GlassNavigationBarPatch.isSearchButtonActive()) {
+                // top bar row, the top bar is drawn with the color of the page until the feed scrolls.
+                final boolean fillTopTabsBar = GlassNavigationBarTopTabs.isShown()
+                        && GlassNavigationBarTopTabs.isFeedOnScreenAtTop();
+                if (fillTopTabsBar || !GlassNavigationBarPatch.isSearchButtonActive()) {
                     final int statusBarHeight = getStatusBarHeight();
                     final long size = scope.patch_getSize();
 
                     scope.patch_drawRoundRect(
-                            topTabsShown ? GlassNavigationBarPatch.getPackedPageColor() : appBarColor,
+                            fillTopTabsBar ? GlassNavigationBarPatch.getPackedPageColor() : appBarColor,
                             pack(0, -statusBarHeight),
                             pack(unpackFirst(size), unpackSecond(size) + statusBarHeight),
                             pack(0, 0)
@@ -147,6 +148,13 @@ public final class SeeThroughStatusBarPatch {
         return SEE_THROUGH_ENABLED && !isSideLayout;
     }
 
+    /**
+     * @return If this patch is included and enabled, in any layout.
+     */
+    static boolean isSeeThroughEnabled() {
+        return isPatchIncluded() && SEE_THROUGH_ENABLED;
+    }
+
     private static int getStatusBarHeight() {
         return statusBarInsets == null ? 0 : statusBarInsets.patch_getTop();
     }
@@ -174,7 +182,9 @@ public final class SeeThroughStatusBarPatch {
         }
 
         statusBarInsets = insets;
-        return modifier.patch_drawWithContent(FadeDraw.INSTANCE);
+        return GlassNavigationBarPatch.getFeedFrostedModifier(
+                (Modifier) modifier.patch_drawWithContent(FadeDraw.INSTANCE)
+        );
     }
 
     /**
@@ -187,6 +197,23 @@ public final class SeeThroughStatusBarPatch {
 
         appBarColor = color;
         return color & COLOR_WITHOUT_ALPHA_MASK;
+    }
+
+    /**
+     * Injection point.
+     *
+     * @param modifier Modifier of the app bar, before its graphics layer.
+     */
+    public static Object getAppBarLayerModifier(Modifier modifier) {
+        try {
+            if (isEnabled()) {
+                return GlassNavigationBarPatch.getTopBarFrostedModifier(modifier);
+            }
+        } catch (Exception ex) {
+            Logger.printException(() -> "getAppBarLayerModifier failure", ex);
+        }
+
+        return modifier;
     }
 
     /**

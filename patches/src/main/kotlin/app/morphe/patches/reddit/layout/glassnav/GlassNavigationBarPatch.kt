@@ -19,11 +19,14 @@ import app.morphe.patcher.util.addFreeRegisters
 import app.morphe.patcher.util.addPatchInterface
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patcher.util.registersUsed
+import app.morphe.patcher.util.returnEarly
 import app.morphe.patches.reddit.layout.autoscroll.ScreenAttachFingerprint
 import app.morphe.patches.reddit.layout.autoscroll.ScreenDetachFingerprint
 import app.morphe.patches.reddit.misc.compose.MODIFIER_INTERFACE
 import app.morphe.patches.reddit.misc.compose.composePatch
 import app.morphe.patches.reddit.misc.compose.modifierType
+import app.morphe.patches.reddit.misc.feed.feedHookPatch
+import app.morphe.patches.reddit.misc.feed.listFeedStateType
 import app.morphe.patches.reddit.misc.settings.settingsPatch
 import app.morphe.patches.reddit.misc.version.is_2026_24_0_or_greater
 import app.morphe.patches.reddit.misc.version.is_2026_45_0_or_greater
@@ -31,10 +34,10 @@ import app.morphe.patches.reddit.misc.version.is_2026_47_0_or_greater
 import app.morphe.patches.reddit.misc.version.versionCheckPatch
 import app.morphe.patches.reddit.shared.Constants.COMPATIBILITY_REDDIT
 import app.morphe.util.addInstructionsAtControlFlowLabel
-import app.morphe.patcher.util.returnEarly
 import app.morphe.util.setExtensionIsPatchIncluded
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -47,6 +50,8 @@ private const val TOP_TABS_EXTENSION_CLASS =
     "Lapp/morphe/extension/reddit/patches/GlassNavigationBarTopTabs;"
 private const val NEUTRAL_COLORS_INTERFACE =
     $$"Lapp/morphe/extension/reddit/patches/GlassNavigationBarPatch$NeutralColors;"
+private const val TOP_TABS_LIST_STATE_INTERFACE =
+    $$"Lapp/morphe/extension/reddit/patches/GlassNavigationBarTopTabs$ListState;"
 
 @Suppress("unused")
 val glassNavigationBarPatch = patch(
@@ -56,7 +61,7 @@ val glassNavigationBarPatch = patch(
 ) {
     compatibleWith(COMPATIBILITY_REDDIT)
 
-    dependsOn(settingsPatch, versionCheckPatch, composePatch)
+    dependsOn(settingsPatch, versionCheckPatch, composePatch, feedHookPatch)
 
     execute {
         if (!is_2026_24_0_or_greater) {
@@ -176,6 +181,23 @@ val glassNavigationBarPatch = patch(
             }
         }
 
+        // The row and the bar are taller if the capsule is taller than the row.
+        listOf(BottomNavRowHeightFingerprint, BottomNavBarHeightFingerprint).forEach { fingerprint ->
+            fingerprint.method.apply {
+                // 50dp height of the row.
+                val index = fingerprint.instructionMatches[1].index
+                val register = getInstruction<OneRegisterInstruction>(index).registerA
+
+                addInstructions(
+                    index + 1,
+                    """
+                        invoke-static/range { v$register .. v$register }, $EXTENSION_CLASS->getBarRowHeight(F)F
+                        move-result v$register
+                    """
+                )
+            }
+        }
+
         BottomNavStackHostFingerprint.matchAll().forEach {
             val navStackHostMatch = it.instructionMatches[1]
             val navStackHostMethod = navStackHostMatch.methodReference
@@ -287,14 +309,28 @@ val glassNavigationBarPatch = patch(
         // region Bottom bar pill.
 
         BottomNavButtonFingerprint.matchAll().forEach { match ->
-            match.method.addInstructions(
-                0,
-                """
-                    invoke-static/range { p3 .. p4 }, $EXTENSION_CLASS->getBarButtonModifier(Z$MODIFIER_INTERFACE)Ljava/lang/Object;
-                    move-result-object p4
-                    check-cast p4, $modifierType
-                """
-            )
+            match.method.apply {
+                // Hook the space first, so its index stays the same.
+                val spaceIndex = match.instructionMatches[1].index
+                val spaceRegister = getInstruction<OneRegisterInstruction>(spaceIndex).registerA
+
+                addInstructions(
+                    spaceIndex + 1,
+                    """
+                        invoke-static/range { v$spaceRegister .. v$spaceRegister }, $EXTENSION_CLASS->getBarButtonTopSpace(F)F
+                        move-result v$spaceRegister
+                    """
+                )
+
+                addInstructions(
+                    0,
+                    """
+                        invoke-static/range { p3 .. p4 }, $EXTENSION_CLASS->getBarButtonModifier(Z$MODIFIER_INTERFACE)Ljava/lang/Object;
+                        move-result-object p4
+                        check-cast p4, $modifierType
+                    """
+                )
+            }
         }
 
         // endregion
@@ -389,7 +425,6 @@ val glassNavigationBarPatch = patch(
             // Tabs in top bar.
 
             val tabRowCallMatch = HomeTabBarFingerprint.instructionMatches[1]
-            val tabRowCall = tabRowCallMatch.methodReference
 
             HomeTabBarFingerprint.method.apply {
                 val pagerRegister = tabRowCallMatch.instruction.registersUsed[1]
@@ -418,8 +453,7 @@ val glassNavigationBarPatch = patch(
                 """
             )
 
-            val indicatorFingerprint = tabRowIndicatorFingerprint(tabRowCall.definingClass)
-            val roundedCornerShapeMethod = indicatorFingerprint.instructionMatches[1].methodReference
+            val roundedCornerShapeMethod = TabRowIndicatorFingerprint.instructionMatches[1].methodReference
 
             NewRoundedCornerShapeFingerprint.method.addFreeRegisters(1).first.addInstructions(
                 0,
@@ -430,10 +464,7 @@ val glassNavigationBarPatch = patch(
                 """
             )
 
-            tabRowIndicatorCallerFingerprint(
-                tabRowCall.parameterTypes[1].toString(),
-                indicatorFingerprint.method
-            ).matchAll().forEach { match ->
+            TabRowIndicatorCallerFingerprint.matchAll().forEach { match ->
                 match.method.apply {
                     val pagerRegister = match.instructionMatches[0].instruction.registersUsed[0]
                     val indicatorMatch = match.instructionMatches[1]
@@ -455,10 +486,7 @@ val glassNavigationBarPatch = patch(
                 }
             }
 
-            homeTabBarHeightCallerFingerprint(
-                HomeTabBarHeightFingerprint.method,
-                HomeTabBarFingerprint.classDef.type
-            ).matchAll().forEach { match ->
+            HomeTabBarHeightCallerFingerprint.matchAll().forEach { match ->
                 match.method.apply {
                     val moveResultMatch = match.instructionMatches[1]
                     val heightRegister = moveResultMatch.instruction.registersUsed[0]
@@ -527,6 +555,29 @@ val glassNavigationBarPatch = patch(
                         """
                     )
                 }
+            }
+
+            // See-through top bar once the feed scrolls.
+            // The app checks if the list is scrolled with a shared lambda class and a case number.
+            NestedListTrackerFingerprint.let {
+                val scrolledCase = it.instructionMatches[0].getInstruction<NarrowLiteralInstruction>().narrowLiteral
+                val scrolledInit = it.instructionMatches[1].methodReference
+
+                mutableClassDefBy(listFeedStateType).addPatchInterface(
+                    TOP_TABS_LIST_STATE_INTERFACE,
+                    "patch_isScrolled",
+                    """
+                        new-instance v0, ${scrolledInit.definingClass}
+                        const v1, $scrolledCase
+                        invoke-direct { v0, p0, v1 }, $scrolledInit
+                        invoke-interface { v0 }, Lkotlin/jvm/functions/Function0;->invoke()Ljava/lang/Object;
+                        move-result-object v0
+                        check-cast v0, Ljava/lang/Boolean;
+                        invoke-virtual { v0 }, Ljava/lang/Boolean;->booleanValue()Z
+                        move-result v0
+                        return v0
+                    """
+                )
             }
         }
 

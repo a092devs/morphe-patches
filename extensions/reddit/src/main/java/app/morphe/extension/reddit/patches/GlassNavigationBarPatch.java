@@ -24,6 +24,7 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 
 import com.reddit.launch.bottomnav.BottomNavScreen;
+import com.reddit.screen.ComposeBottomSheetScreen;
 
 import java.util.List;
 
@@ -252,7 +253,12 @@ public final class GlassNavigationBarPatch {
     /**
      * How much larger the glass behind the menu button and the avatar is than the button.
      */
-    private static final float TOP_BAR_BUTTON_GLASS_EXTRA_DP = 8;
+    static final float TOP_BAR_BUTTON_GLASS_EXTRA_DP = 8;
+
+    /**
+     * Minimum height of a top bar button. Smaller slots are empty (such as a hidden avatar).
+     */
+    private static final float MIN_TOP_BAR_BUTTON_DP = 12;
 
     private static final boolean GLASS_ENABLED = Settings.GLASS_NAVIGATION_BAR.get();
     static final GlassStrength STRENGTH = GLASS_ENABLED
@@ -262,6 +268,12 @@ public final class GlassNavigationBarPatch {
     static final int BLUR_PERCENT = SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_BLUR);
     private static final int HEIGHT_PERCENT = SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_HEIGHT);
     private static final int WIDTH_PERCENT = SeekBarPreference.clampToRange(Settings.GLASS_NAVIGATION_BAR_WIDTH);
+    /**
+     * How much taller the row of buttons is, so a capsule taller than the default fits in it.
+     */
+    private static final float BAR_ROW_EXTRA_HEIGHT_DP = GLASS_ENABLED
+            ? Math.max(0, BAR_CAPSULE_HEIGHT_DP * (HEIGHT_PERCENT - 100) / 100)
+            : 0;
     /**
      * How far the bottom bar is lifted.
      */
@@ -359,24 +371,27 @@ public final class GlassNavigationBarPatch {
 
             setRailShown(false);
 
-            if (isSearchButtonActive()) {
-                // The buttons are inside the capsule, which ends before the search button.
-                final float start = getSidePadding(getScreenWidthDp())
-                        + BAR_CAPSULE_INSET_DP * WIDTH_PERCENT / 100;
-                final float end = start + BAR_CAPSULE_HEIGHT_DP * HEIGHT_PERCENT / 100
-                        + SEARCH_BUTTON_GAP_DP;
-                return modifier.patch_padding(start, 0, end, 0);
-            }
-
-            if (WIDTH_PERCENT < 100) {
-                final float padding = getSidePadding(getScreenWidthDp());
-                return modifier.patch_padding(padding, 0, padding, 0);
-            }
+            // The buttons sit inside the capsule, which ends before the search button when active.
+            final float start = getSidePadding(getScreenWidthDp())
+                    + BAR_CAPSULE_INSET_DP * WIDTH_PERCENT / 100;
+            final float end = isSearchButtonActive()
+                    ? start + BAR_CAPSULE_HEIGHT_DP * HEIGHT_PERCENT / 100 + SEARCH_BUTTON_GAP_DP
+                    : start;
+            return modifier.patch_padding(start, 0, end, 0);
         } catch (Exception ex) {
             Logger.printException(() -> "getBarModifier failure", ex);
         }
 
         return modifier;
+    }
+
+    /**
+     * Injection point.
+     *
+     * @param original Height of the bottom navigation bar buttons, in dp.
+     */
+    public static float getBarRowHeight(float original) {
+        return original + BAR_ROW_EXTRA_HEIGHT_DP;
     }
 
     /**
@@ -488,6 +503,15 @@ public final class GlassNavigationBarPatch {
     /**
      * Injection point.
      *
+     * @param original Space above the icon of a bottom navigation bar button, in dp.
+     */
+    public static float getBarButtonTopSpace(float original) {
+        return isBarPillActive() ? 0 : original;
+    }
+
+    /**
+     * Injection point.
+     *
      * @param modifier Modifier of the search field at the top of Home.
      */
     public static Object getSearchFieldModifier(Modifier modifier) {
@@ -529,6 +553,31 @@ public final class GlassNavigationBarPatch {
     }
 
     /**
+     * @return If the glass of the Home top bar buttons and tabs blurs the feed.
+     */
+    private static boolean isTopBarFrosted() {
+        return FROSTED_ENABLED && isSearchButtonActive();
+    }
+
+    /**
+     * @param modifier Modifier of the Home feed.
+     */
+    static Object getFeedFrostedModifier(Modifier modifier) {
+        return isTopBarFrosted()
+                ? modifier.patch_drawWithContent(GlassNavigationBarBlur.FeedDraw.INSTANCE)
+                : modifier;
+    }
+
+    /**
+     * @param modifier Modifier of the Home top bar, outside its graphics layer.
+     */
+    static Object getTopBarFrostedModifier(Modifier modifier) {
+        return isTopBarFrosted()
+                ? modifier.patch_drawWithContent(GlassNavigationBarBlur.TopBarDraw.INSTANCE)
+                : modifier;
+    }
+
+    /**
      * Injection point.
      */
     public static void onScreenAttached(Object screen, @Nullable View view) {
@@ -539,6 +588,8 @@ public final class GlassNavigationBarPatch {
         try {
             if (screen instanceof BottomNavScreen) {
                 GlassNavigationBarSearchButton.onBottomNavAttached(view);
+            } else if (screen instanceof ComposeBottomSheetScreen) {
+                GlassNavigationBarSearchButton.onBottomSheetAttached(screen);
             }
         } catch (Exception ex) {
             Logger.printException(() -> "onScreenAttached failure", ex);
@@ -556,6 +607,8 @@ public final class GlassNavigationBarPatch {
         try {
             if (screen instanceof BottomNavScreen) {
                 GlassNavigationBarSearchButton.onBottomNavDetached();
+            } else if (screen instanceof ComposeBottomSheetScreen) {
+                GlassNavigationBarSearchButton.onBottomSheetDetached(screen);
             }
         } catch (Exception ex) {
             Logger.printException(() -> "onScreenDetached failure", ex);
@@ -688,7 +741,7 @@ public final class GlassNavigationBarPatch {
         final float width = unpackFirst(size);
         final float barHeight = unpackSecond(size);
         final float density = getDensity();
-        final float rowHeight = BAR_ROW_HEIGHT_DP * density;
+        final float rowHeight = getBarRowHeightPx(density);
 
         float left = getSidePadding(width)
                 + BAR_CAPSULE_INSET_DP * density * WIDTH_PERCENT / 100;
@@ -773,8 +826,14 @@ public final class GlassNavigationBarPatch {
      */
     private static void drawTopBarButtonGlass(ContentDrawScope scope) {
         final long size = scope.patch_getSize();
-        final float extra = TOP_BAR_BUTTON_GLASS_EXTRA_DP * getDensity();
-        final float height = unpackSecond(size) + extra;
+        final float density = getDensity();
+        final float elementHeight = unpackSecond(size);
+        if (elementHeight < MIN_TOP_BAR_BUTTON_DP * density) {
+            return;
+        }
+
+        final float extra = TOP_BAR_BUTTON_GLASS_EXTRA_DP * density;
+        final float height = elementHeight + extra;
         final float width = Math.max(unpackFirst(size) + extra, height);
         final float left = (unpackFirst(size) - width) / 2;
         final float top = -extra / 2;
@@ -798,6 +857,10 @@ public final class GlassNavigationBarPatch {
 
         GlassNavigationBarEdge.drawShadow(canvas, left, top, width, height, radius);
 
+        if (FROSTED_ENABLED) {
+            GlassNavigationBarBlur.drawTopBarBackdrop(scope, left, top, width, height, radius);
+        }
+
         scope.patch_drawRoundRect(
                 getGlassColor(dark),
                 pack(left, top),
@@ -806,6 +869,10 @@ public final class GlassNavigationBarPatch {
         );
 
         GlassNavigationBarEdge.drawOutline(canvas, left, top, width, height, radius, dark);
+    }
+
+    private static float getBarRowHeightPx(float density) {
+        return (BAR_ROW_HEIGHT_DP + BAR_ROW_EXTRA_HEIGHT_DP) * density;
     }
 
     private static float getBarCapsuleHeightPx(float density) {

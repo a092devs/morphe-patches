@@ -11,6 +11,7 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.StringComparisonType
+import app.morphe.patcher.anyInstruction
 import app.morphe.patcher.checkCast
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.literal
@@ -20,9 +21,9 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val BOTTOM_NAV_SCREEN_CLASS = "Lcom/reddit/launch/bottomnav/BottomNavScreen;"
+private const val BOTTOM_NAV_WIDGET_CLASS = "Lcom/reddit/widget/bottomnav/a;"
 
 internal object BottomNavBarFingerprint : Fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
@@ -41,6 +42,41 @@ internal object BottomNavBarFingerprint : Fingerprint(
             returnType = "V",
             location = MatchAfterWithin(40)
         )
+    )
+)
+
+/**
+ * Row of buttons in the bottom navigation bar, with a height of 50dp.
+ */
+internal object BottomNavRowHeightFingerprint : Fingerprint(
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("Ljava/lang/Object;", "Ljava/lang/Object;"),
+    filters = listOf(
+        literal(28f),
+        literal(50f),
+        // Modifier.height
+        methodCall(
+            opcode = Opcode.INVOKE_STATIC,
+            parameters = listOf("L", "F"),
+            returnType = "L",
+            location = MatchAfterWithin(5)
+        )
+    )
+)
+
+/**
+ * Height of the bottom navigation bar, which is the row of buttons (50dp)
+ * plus the system navigation bar below it.
+ */
+internal object BottomNavBarHeightFingerprint : Fingerprint(
+    filters = listOf(
+        fieldAccess(
+            opcode = Opcode.SGET,
+            definingClass = BOTTOM_NAV_WIDGET_CLASS,
+            type = "I"
+        ),
+        literal(50f, location = MatchAfterWithin(15)),
+        opcode(Opcode.ADD_FLOAT_2ADDR, location = MatchAfterWithin(5))
     )
 )
 
@@ -469,9 +505,10 @@ internal object HomeTabLabelFingerprint : Fingerprint(
 
 /**
  * Indicator of a tab row. Uses a RoundedCornerShape, 2026.47.0+
+ * The tab row is the class of the method that [HomeTabBarFingerprint] calls to draw it.
  */
-internal fun tabRowIndicatorFingerprint(tabRowClass: String) = Fingerprint(
-    definingClass = tabRowClass,
+internal object TabRowIndicatorFingerprint : Fingerprint(
+    definingClass = { HomeTabBarFingerprint.instructionMatches[1].methodReference.definingClass },
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
     returnType = "V",
     parameters = listOf("I", "L", "L", "Z"),
@@ -487,26 +524,37 @@ internal fun tabRowIndicatorFingerprint(tabRowClass: String) = Fingerprint(
 )
 
 /**
- * Calls the indicator of a tab row with the pager state of the tab row, 2026.47.0+
+ * The pager state of the tab row, the second parameter of the tab row that [HomeTabBarFingerprint] calls.
  */
-internal fun tabRowIndicatorCallerFingerprint(pagerType: String, indicatorMethod: MethodReference) = Fingerprint(
+private val tabRowPagerType
+    get() = HomeTabBarFingerprint.instructionMatches[1].methodReference.parameterTypes[1].toString()
+
+/**
+ * Calls the indicator of a tab row ([TabRowIndicatorFingerprint]) with the pager state of the tab row, 2026.47.0+
+ * Some 2026.47.0 builds read the pager state from a field of the indicator lambda,
+ * and newer builds cast it.
+ */
+internal object TabRowIndicatorCallerFingerprint : Fingerprint(
     filters = listOf(
-        checkCast(pagerType),
-        methodCall(reference = indicatorMethod)
+        anyInstruction(
+            checkCast({ tabRowPagerType }),
+            fieldAccess(opcode = Opcode.IGET_OBJECT, type = { tabRowPagerType })
+        ),
+        methodCall(reference = { TabRowIndicatorFingerprint.originalMethod })
     )
 )
 
 /**
- * Uses the height of the home feed tab row header.
- * The tab bar itself uses the height too, so its class is excluded.
+ * Uses the height of the home feed tab row header ([HomeTabBarHeightFingerprint]).
+ * The tab bar ([HomeTabBarFingerprint]) uses the height too, so its class is excluded.
  */
-internal fun homeTabBarHeightCallerFingerprint(heightMethod: MethodReference, tabBarClass: String) = Fingerprint(
+internal object HomeTabBarHeightCallerFingerprint : Fingerprint(
     returnType = "V",
     filters = listOf(
-        methodCall(reference = heightMethod),
+        methodCall(reference = { HomeTabBarHeightFingerprint.originalMethod }),
         opcode(Opcode.MOVE_RESULT, location = MatchAfterImmediately())
     ),
-    custom = { _, classDef -> classDef.type != tabBarClass }
+    custom = { _, classDef -> classDef.type != HomeTabBarFingerprint.originalClassDef.type }
 )
 
 internal object NewRoundedCornerShapeFingerprint : Fingerprint(
@@ -524,6 +572,39 @@ internal object BottomNavButtonFingerprint : Fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
     returnType = "V",
     filters = listOf(
-        string("bottom_nav_button")
+        string("bottom_nav_button"),
+        // Space above the icon.
+        literal(8f),
+        // Modifier.height
+        methodCall(
+            opcode = Opcode.INVOKE_STATIC,
+            parameters = listOf("L", "F"),
+            returnType = "L",
+            location = MatchAfterWithin(5)
+        )
+    )
+)
+
+/**
+ * Tracks if a nested list feed is scrolled, with a shared lambda class that checks the list state.
+ */
+internal object NestedListTrackerFingerprint : Fingerprint(
+    definingClass = $$"Lcom/reddit/feeds/ui/composables/NestedListTrackerKt$NestedListTracker$1$1;",
+    name = "invokeSuspend",
+    filters = listOf(
+        // Case number of the shared lambda class.
+        opcode(Opcode.CONST_4),
+        methodCall(
+            opcode = Opcode.INVOKE_DIRECT,
+            name = "<init>",
+            parameters = listOf("Landroidx/compose/foundation/lazy/", "I"),
+            location = MatchAfterWithin(3)
+        ),
+        // derivedStateOf
+        methodCall(
+            opcode = Opcode.INVOKE_STATIC,
+            parameters = listOf("Lkotlin/jvm/functions/Function0;"),
+            location = MatchAfterWithin(3)
+        )
     )
 )
